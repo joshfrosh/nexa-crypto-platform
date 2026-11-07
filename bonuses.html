@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bonuses — Nexa</title>
+  <meta name="description" content="Claim welcome credits, deposit matches and seasonal boosts." />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="nav" id="nav"></header>
+
+  <main id="main" class="page">
+    <div class="container">
+      <div class="page-head">
+        <h1>Bonuses</h1>
+        <p>Claim available offers. Each bonus can be claimed once per account.</p>
+      </div>
+
+      <div class="grid g3 mt-3" id="bonusStats"></div>
+
+      <div class="card-head mt-3">
+        <div>
+          <div class="card-title" style="font-size:17px">Available offers</div>
+          <div class="card-sub">Offers are created and managed by the admin</div>
+        </div>
+      </div>
+      <div class="grid g3" id="bonusGrid"></div>
+
+      <div class="card-head mt-3">
+        <div>
+          <div class="card-title" style="font-size:17px">Claim history</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Bonus</th><th class="num">Amount</th><th>Claimed</th></tr></thead>
+            <tbody id="claimBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/countries.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    (function () {
+      var user = UI.requireAuth();
+      if (!user) return;
+
+      function renderStats() {
+        var u = Store.currentUser();
+        var claims = Store.get().claims.filter(function (c) { return c.userId === u.id; });
+        var total = claims.reduce(function (a, c) { return a + c.amount; }, 0);
+        var available = Store.bonuses().filter(function (b) {
+          return Store.claimedBonusIds(u.id).indexOf(b.id) === -1;
+        });
+
+        document.getElementById('bonusStats').innerHTML =
+          '<div class="card"><div class="stat"><span class="stat-label">Available balance</span>' +
+            '<span class="stat-value sm">' + UI.money(u.balance) + '</span></div></div>' +
+          '<div class="card"><div class="stat"><span class="stat-label">Total claimed</span>' +
+            '<span class="stat-value sm text-up">' + UI.money(total) + '</span></div></div>' +
+          '<div class="card"><div class="stat"><span class="stat-label">Offers to claim</span>' +
+            '<span class="stat-value sm">' + available.length + '</span></div></div>';
+      }
+
+      function renderBonuses() {
+        var u = Store.currentUser();
+        var claimed = Store.claimedBonusIds(u.id);
+        var list = Store.bonuses();
+        if (!list.length) {
+          document.getElementById('bonusGrid').innerHTML =
+            '<div class="card"><div class="empty"><p>No bonuses are available right now.</p></div></div>';
+          return;
+        }
+        document.getElementById('bonusGrid').innerHTML = list.map(function (b) {
+          var isClaimed = claimed.indexOf(b.id) !== -1;
+          return '<article class="card bonus-card ' + (isClaimed ? 'claimed' : '') + '">' +
+            '<div class="row-between">' +
+              '<span class="badge badge-up">' + (b.type === 'credit' ? 'Account credit' : 'Bonus') + '</span>' +
+              (isClaimed ? '<span class="badge">Claimed</span>' : '') +
+            '</div>' +
+            '<div class="bonus-amount">+' + UI.money(b.amount) + '</div>' +
+            '<div><div style="font-weight:650;font-size:15px">' + UI.esc(b.title) + '</div>' +
+              '<p class="text-dim mt-1" style="font-size:13px;line-height:1.55">' + UI.esc(b.description) + '</p></div>' +
+            (b.code ? '<div><span class="bonus-code">' + UI.esc(b.code) + '</span></div>' : '') +
+            '<div class="plan-meta" style="font-size:12.5px">' +
+              '<div><span>Wagering</span><span>' + (b.wager ? b.wager + '×' : 'None') + '</span></div>' +
+            '</div>' +
+            '<button class="btn ' + (isClaimed ? 'btn-outline' : 'btn-primary') + ' btn-block" ' +
+              (isClaimed ? 'disabled' : 'data-claim="' + b.id + '"') + '>' +
+              (isClaimed ? 'Already claimed' : 'Claim bonus') + '</button>' +
+          '</article>';
+        }).join('');
+      }
+
+      function renderClaims() {
+        var u = Store.currentUser();
+        var claims = Store.get().claims.filter(function (c) { return c.userId === u.id; });
+        if (!claims.length) {
+          document.getElementById('claimBody').innerHTML =
+            '<tr><td colspan="3"><div class="empty"><p>You have not claimed any bonuses yet.</p></div></td></tr>';
+          return;
+        }
+        document.getElementById('claimBody').innerHTML = claims.map(function (c) {
+          return '<tr><td style="font-weight:600">' + UI.esc(c.title) + '</td>' +
+            '<td class="num text-up">+' + UI.money(c.amount) + '</td>' +
+            '<td class="text-dim" style="font-size:12.5px">' + UI.dateShort(c.claimedAt) + '</td></tr>';
+        }).join('');
+      }
+
+      function renderAll() { renderStats(); renderBonuses(); renderClaims(); }
+
+      document.getElementById('bonusGrid').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-claim]');
+        if (!b) return;
+        var res = Store.claimBonus(b.dataset.claim);
+        if (!res.ok) { UI.toast(res.error, 'err'); return; }
+        UI.toast('Bonus claimed — ' + UI.money(res.amount) + ' credited');
+        renderAll();
+      });
+
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
