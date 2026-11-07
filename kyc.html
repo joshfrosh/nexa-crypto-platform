@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Identity Verification — Nexa</title>
+  <meta name="description" content="Submit your identity documents for verification. Reviewed by the account admin." />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="nav" id="nav"></header>
+
+  <main id="main" class="page">
+    <div class="container" style="max-width:820px">
+      <div class="page-head">
+        <h1>Identity Verification</h1>
+        <p>Verify your identity to unlock higher limits. Submissions are reviewed by the admin.</p>
+      </div>
+
+      <div id="kycStatus" class="mt-3"></div>
+
+      <div class="card card-pad-lg mt-3" id="kycFormCard">
+        <div class="card-head">
+          <div>
+            <div class="card-title" style="font-size:16px">Verification details</div>
+            <div class="card-sub">All fields are required</div>
+          </div>
+          <span class="badge badge-info">Step 1 of 1</span>
+        </div>
+
+        <form id="kycForm" class="form-grid" novalidate>
+          <div class="field full">
+            <label for="fullName">Full legal name</label>
+            <input class="input" id="fullName" name="fullName" placeholder="As shown on your document" required />
+          </div>
+          <div class="field">
+            <label for="dob">Date of birth</label>
+            <input class="input" id="dob" name="dob" type="date" required />
+          </div>
+          <div class="field">
+            <label for="country">Country of residence</label>
+            <select class="select" id="country" name="country" required></select>
+          </div>
+          <div class="field">
+            <label for="docType">Document type</label>
+            <select class="select" id="docType" name="docType" required>
+              <option value="passport">Passport</option>
+              <option value="national_id">National ID card</option>
+              <option value="drivers_license">Driver's licence</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="docNumber">Document number</label>
+            <input class="input" id="docNumber" name="docNumber" placeholder="e.g. X1234567" required />
+          </div>
+          <div class="field full">
+            <label>Document upload (demo)</label>
+            <div class="card" style="background:var(--bg-elev);border-style:dashed;padding:22px;text-align:center">
+              <div style="font-size:22px;margin-bottom:6px">📄</div>
+              <p class="text-dim" style="font-size:13px">In this demo no file is uploaded. A production build would send the image to a KYC provider.</p>
+            </div>
+          </div>
+          <div class="full">
+            <div class="error-text" id="kycError"></div>
+            <button class="btn btn-primary btn-lg" type="submit" id="kycSubmit">Submit for verification</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card mt-3">
+        <div class="card-title mb-2">What happens next</div>
+        <ul class="stack" style="gap:10px">
+          <li class="row" style="align-items:flex-start"><span class="badge badge-info">1</span><span class="text-dim" style="font-size:13.5px">You submit your details — status becomes <strong>pending</strong>.</span></li>
+          <li class="row" style="align-items:flex-start"><span class="badge badge-info">2</span><span class="text-dim" style="font-size:13.5px">The admin reviews the submission in the admin panel.</span></li>
+          <li class="row" style="align-items:flex-start"><span class="badge badge-info">3</span><span class="text-dim" style="font-size:13.5px">On approval your account is marked <strong>verified</strong>; on rejection you can resubmit.</span></li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/countries.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    (function () {
+      var user = UI.requireAuth();
+      if (!user) return;
+
+      /* populate country select */
+      var sel = document.getElementById('country');
+      sel.innerHTML = window.COUNTRIES.map(function (c) {
+        return '<option value="' + UI.esc(c[0]) + '">' + UI.esc(c[0]) + '</option>';
+      }).join('');
+
+      function renderStatus() {
+        var u = Store.currentUser();
+        var k = Store.myKyc(u.id);
+        var host = document.getElementById('kycStatus');
+        var formCard = document.getElementById('kycFormCard');
+
+        if (!k) {
+          host.innerHTML = '<div class="card" style="border-left:3px solid var(--info)">' +
+            '<div class="row-between"><div><div style="font-weight:650">Not verified</div>' +
+            '<div class="text-dim" style="font-size:13px">Submit your details below to start verification.</div></div>' +
+            '<span class="badge badge-info">Unverified</span></div></div>';
+          formCard.classList.remove('hidden');
+          return;
+        }
+
+        if (k.status === 'approved') {
+          host.innerHTML = '<div class="card" style="border-left:3px solid var(--accent)">' +
+            '<div class="row-between"><div><div style="font-weight:650">Identity verified</div>' +
+            '<div class="text-dim" style="font-size:13px">Approved ' + UI.dateShort(k.reviewedAt) + '. You have full access.</div></div>' +
+            '<span class="badge badge-up">Verified</span></div></div>';
+          formCard.classList.add('hidden');
+        } else if (k.status === 'pending') {
+          host.innerHTML = '<div class="card" style="border-left:3px solid var(--warn)">' +
+            '<div class="row-between"><div><div style="font-weight:650">Under review</div>' +
+            '<div class="text-dim" style="font-size:13px">Submitted ' + UI.dateShort(k.submittedAt) + '. The admin will review it shortly.</div></div>' +
+            '<span class="badge badge-warn">Pending</span></div></div>';
+          formCard.classList.add('hidden');
+        } else {
+          host.innerHTML = '<div class="card" style="border-left:3px solid var(--down)">' +
+            '<div class="row-between"><div><div style="font-weight:650">Verification rejected</div>' +
+            '<div class="text-dim" style="font-size:13px">' + (k.note ? UI.esc(k.note) : 'Please check your details and resubmit.') + '</div></div>' +
+            '<span class="badge badge-down">Rejected</span></div></div>';
+          formCard.classList.remove('hidden');
+          document.getElementById('fullName').value = k.fullName || '';
+          document.getElementById('dob').value = k.dob || '';
+          document.getElementById('docNumber').value = k.docNumber || '';
+        }
+      }
+
+      document.getElementById('kycForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var err = document.getElementById('kycError');
+        err.textContent = '';
+        var data = {
+          fullName: document.getElementById('fullName').value.trim(),
+          dob: document.getElementById('dob').value,
+          country: document.getElementById('country').value,
+          docType: document.getElementById('docType').value,
+          docNumber: document.getElementById('docNumber').value.trim()
+        };
+        if (!data.fullName) { err.textContent = 'Enter your full legal name.'; return; }
+        if (!data.dob) { err.textContent = 'Enter your date of birth.'; return; }
+        if (!data.docNumber) { err.textContent = 'Enter your document number.'; return; }
+        var res = Store.submitKyc(data);
+        if (!res.ok) { err.textContent = res.error; return; }
+        UI.toast('Submitted — your verification is now pending review.');
+        renderStatus();
+      });
+
+      renderStatus();
+    })();
+  </script>
+</body>
+</html>
