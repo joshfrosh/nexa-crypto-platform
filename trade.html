@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trade &amp; Buy — Nexa</title>
+  <meta name="description" content="Buy and sell crypto at live mock prices with instant fills and full order history." />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="nav" id="nav"></header>
+
+  <main id="main" class="page">
+    <div class="container">
+      <div class="page-head row-between">
+        <div>
+          <h1>Trade &amp; Buy</h1>
+          <p>Spot markets with instant fills. Your balance is shared across every product.</p>
+        </div>
+        <div class="row" id="balanceChip"></div>
+      </div>
+
+      <div class="grid mt-3" style="grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:20px" id="tradeLayout">
+        <!-- ================================================== LEFT: chart + markets -->
+        <div class="stack">
+          <div class="card">
+            <div class="row-between mb-2">
+              <div class="row">
+                <span class="coin lg" id="selCoin">BTC</span>
+                <div>
+                  <div style="font-weight:650;font-size:16px" id="selName">Bitcoin</div>
+                  <div class="text-faint" style="font-size:12px" id="selPair">BTC / USD</div>
+                </div>
+              </div>
+              <div style="text-align:right">
+                <div class="mono" style="font-size:24px;font-weight:700" id="selPrice">$0.00</div>
+                <div id="selDelta" class="badge badge-up">+0.00%</div>
+              </div>
+            </div>
+            <div class="row mb-2" style="gap:6px" id="rangeBtns">
+              <button class="btn btn-sm btn-outline" data-range="1H">1H</button>
+              <button class="btn btn-sm btn-outline" data-range="1D">1D</button>
+              <button class="btn btn-sm btn-outline" data-range="1W">1W</button>
+              <button class="btn btn-sm btn-outline" data-range="1M">1M</button>
+            </div>
+            <div class="chart-box"><svg id="mainChart"></svg></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <div class="card-title">Markets</div>
+                <div class="card-sub">Click a row to load it into the chart</div>
+              </div>
+              <input class="input" id="marketSearch" placeholder="Search asset…" style="max-width:200px" />
+            </div>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Asset</th><th class="num">Price</th><th class="num">24h</th>
+                    <th class="num" style="width:100px">Trend</th><th class="num">You hold</th>
+                  </tr>
+                </thead>
+                <tbody id="marketBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================================================== RIGHT: order form -->
+        <div class="stack">
+          <div class="card">
+            <div class="segmented mb-2" id="sideToggle" style="width:100%">
+              <button class="buy active" data-side="buy" style="flex:1">Buy</button>
+              <button class="sell" data-side="sell" style="flex:1">Sell</button>
+            </div>
+
+            <div class="field mb-2">
+              <label for="orderAmount">Amount (USD)</label>
+              <input class="input" id="orderAmount" type="number" min="0" step="0.01" placeholder="0.00" />
+              <div class="row" style="gap:6px;margin-top:6px">
+                <button class="btn btn-sm btn-outline" data-quick="100">$100</button>
+                <button class="btn btn-sm btn-outline" data-quick="500">$500</button>
+                <button class="btn btn-sm btn-outline" data-quick="1000">$1,000</button>
+                <button class="btn btn-sm btn-outline" data-quick="max">Max</button>
+              </div>
+            </div>
+
+            <div class="card" style="background:var(--bg-elev);padding:14px;margin-bottom:16px">
+              <div class="row-between" style="font-size:13px;margin-bottom:8px">
+                <span class="text-faint">You receive</span>
+                <span class="mono" id="receiveQty">0.00000000 BTC</span>
+              </div>
+              <div class="row-between" style="font-size:13px;margin-bottom:8px">
+                <span class="text-faint">Price</span>
+                <span class="mono" id="orderPrice">$0.00</span>
+              </div>
+              <div class="row-between" style="font-size:13px">
+                <span class="text-faint">Available</span>
+                <span class="mono" id="availBal">$0.00</span>
+              </div>
+            </div>
+
+            <div class="error-text" id="orderError"></div>
+            <button class="btn btn-primary btn-block btn-lg" id="submitOrder">Buy BTC</button>
+            <p class="hint mt-2 center">Demo fills are instant at the displayed price.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><div class="card-title">Your holdings</div></div>
+            <div id="holdingsList"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><div class="card-title">Recent orders</div></div>
+            <div id="ordersList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/countries.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    (function () {
+      var user = UI.requireAuth();
+      if (!user) return;
+
+      var state = { symbol: 'BTC', side: 'buy', range: '1D' };
+
+      function refreshBalance() {
+        var u = Store.currentUser();
+        document.getElementById('balanceChip').innerHTML =
+          '<div class="card" style="padding:10px 16px;display:flex;gap:14px;align-items:center">' +
+            '<div><div class="stat-label">Available</div><div class="mono" style="font-weight:700">' + UI.money(u.balance) + '</div></div>' +
+            '<a class="btn btn-sm btn-outline" href="wallet.html">Deposit</a>' +
+          '</div>';
+        document.getElementById('availBal').textContent = UI.money(u.balance);
+      }
+
+      function seriesFor(m, range) {
+        var base = m.series;
+        var n = range === '1H' ? 20 : range === '1D' ? 40 : range === '1W' ? 55 : 60;
+        return base.slice(base.length - n);
+      }
+
+      function renderChart() {
+        var m = Store.market(state.symbol);
+        if (!m) return;
+        document.getElementById('selCoin').textContent = m.symbol;
+        document.getElementById('selName').textContent = m.name;
+        document.getElementById('selPair').textContent = m.symbol + ' / USD';
+        document.getElementById('selPrice').textContent = UI.price(m.price);
+        var d = document.getElementById('selDelta');
+        d.textContent = UI.pct(m.change24h);
+        d.className = 'badge ' + (m.change24h >= 0 ? 'badge-up' : 'badge-down');
+        UI.drawChart(document.getElementById('mainChart'), seriesFor(m, state.range), { height: 300 });
+        document.getElementById('orderPrice').textContent = UI.price(m.price);
+        document.getElementById('submitOrder').textContent =
+          (state.side === 'buy' ? 'Buy ' : 'Sell ') + m.symbol;
+        updateReceive();
+      }
+
+      function renderMarkets() {
+        var q = (document.getElementById('marketSearch').value || '').toLowerCase();
+        var u = Store.currentUser();
+        var rows = Store.markets().filter(function (m) {
+          return !q || m.symbol.toLowerCase().indexOf(q) !== -1 || m.name.toLowerCase().indexOf(q) !== -1;
+        }).map(function (m) {
+          var h = Store.holdings(u.id, m.symbol);
+          var active = m.symbol === state.symbol ? ' style="background:var(--accent-soft)"' : '';
+          return '<tr class="market-row" data-sym="' + m.symbol + '"' + active + '>' +
+            '<td><div class="sym-cell"><span class="coin sm">' + m.symbol + '</span>' +
+              '<div><strong>' + m.symbol + '</strong><small>' + UI.esc(m.name) + '</small></div></div></td>' +
+            '<td class="num">' + UI.price(m.price) + '</td>' +
+            '<td class="num ' + (m.change24h >= 0 ? 'text-up' : 'text-down') + '">' + UI.pct(m.change24h) + '</td>' +
+            '<td class="num">' + UI.sparkline(m.series.slice(-24), m.change24h >= 0) + '</td>' +
+            '<td class="num text-dim">' + (h.qty > 0 ? UI.num(h.qty, 6) + ' ' + m.symbol : '—') + '</td>' +
+          '</tr>';
+        }).join('');
+        document.getElementById('marketBody').innerHTML = rows ||
+          '<tr><td colspan="5"><div class="empty"><p>No assets match that search.</p></div></td></tr>';
+      }
+
+      function renderHoldings() {
+        var u = Store.currentUser();
+        var p = Store.portfolio(u.id);
+        if (!p.length) {
+          document.getElementById('holdingsList').innerHTML =
+            '<div class="empty"><div class="ico">◇</div><p>No holdings yet. Buy your first asset.</p></div>';
+          return;
+        }
+        document.getElementById('holdingsList').innerHTML = p.map(function (h) {
+          return '<div class="row-between" style="padding:9px 0;border-bottom:1px solid var(--border-soft)">' +
+            '<div class="row"><span class="coin sm">' + h.symbol + '</span>' +
+              '<div><div style="font-size:13px;font-weight:600">' + h.symbol + '</div>' +
+              '<div class="text-faint mono" style="font-size:11.5px">' + UI.num(h.qty, 6) + '</div></div></div>' +
+            '<div class="mono" style="font-size:13px">' + UI.money(h.value) + '</div>' +
+          '</div>';
+        }).join('');
+      }
+
+      function renderOrders() {
+        var u = Store.currentUser();
+        var orders = Store.get().orders.filter(function (o) { return o.userId === u.id; }).slice(0, 8);
+        if (!orders.length) {
+          document.getElementById('ordersList').innerHTML =
+            '<div class="empty"><div class="ico">≡</div><p>No orders yet.</p></div>';
+          return;
+        }
+        document.getElementById('ordersList').innerHTML = orders.map(function (o) {
+          return '<div class="row-between" style="padding:9px 0;border-bottom:1px solid var(--border-soft)">' +
+            '<div><div style="font-size:13px;font-weight:600">' +
+              '<span class="' + (o.side === 'buy' ? 'text-up' : 'text-down') + '">' + o.side.toUpperCase() + '</span> ' + o.symbol + '</div>' +
+              '<div class="text-faint" style="font-size:11.5px">' + UI.timeAgo(o.createdAt) + '</div></div>' +
+            '<div class="mono" style="font-size:13px">' + UI.money(o.amount) + '</div>' +
+          '</div>';
+        }).join('');
+      }
+
+      function updateReceive() {
+        var m = Store.market(state.symbol);
+        var amt = Number(document.getElementById('orderAmount').value) || 0;
+        var qty = m ? amt / m.price : 0;
+        document.getElementById('receiveQty').textContent = UI.num(qty, 8) + ' ' + state.symbol;
+      }
+
+      function renderAll() { refreshBalance(); renderChart(); renderMarkets(); renderHoldings(); renderOrders(); }
+
+      /* ---- events ---- */
+      document.getElementById('marketBody').addEventListener('click', function (e) {
+        var tr = e.target.closest('.market-row');
+        if (!tr) return;
+        state.symbol = tr.dataset.sym;
+        renderAll();
+      });
+      document.getElementById('marketSearch').addEventListener('input', renderMarkets);
+
+      document.getElementById('sideToggle').addEventListener('click', function (e) {
+        var b = e.target.closest('button[data-side]');
+        if (!b) return;
+        state.side = b.dataset.side;
+        this.querySelectorAll('button').forEach(function (x) { x.classList.remove('active'); });
+        b.classList.add('active');
+        renderChart();
+      });
+
+      document.getElementById('rangeBtns').addEventListener('click', function (e) {
+        var b = e.target.closest('button[data-range]');
+        if (!b) return;
+        state.range = b.dataset.range;
+        this.querySelectorAll('button').forEach(function (x) { x.classList.remove('btn-primary'); x.classList.add('btn-outline'); });
+        b.classList.remove('btn-outline'); b.classList.add('btn-primary');
+        renderChart();
+      });
+
+      document.getElementById('orderAmount').addEventListener('input', updateReceive);
+
+      document.querySelectorAll('[data-quick]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var u = Store.currentUser();
+          var v = b.dataset.quick;
+          document.getElementById('orderAmount').value = v === 'max' ? u.balance.toFixed(2) : v;
+          updateReceive();
+        });
+      });
+
+      document.getElementById('submitOrder').addEventListener('click', function () {
+        var amt = Number(document.getElementById('orderAmount').value);
+        var errEl = document.getElementById('orderError');
+        errEl.textContent = '';
+        var res = state.side === 'buy' ? Store.buy(state.symbol, amt) : Store.sell(state.symbol, amt);
+        if (!res.ok) { errEl.textContent = res.error; return; }
+        UI.toast(state.side === 'buy'
+          ? 'Bought ' + UI.num(res.qty, 6) + ' ' + state.symbol
+          : 'Sold ' + UI.money(amt) + ' of ' + state.symbol);
+        document.getElementById('orderAmount').value = '';
+        renderAll();
+      });
+
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
