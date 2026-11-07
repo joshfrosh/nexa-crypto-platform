@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Predictions — Nexa</title>
+  <meta name="description" content="Call crypto price direction on 15-minute rounds. Correct calls pay double." />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="nav" id="nav"></header>
+
+  <main id="main" class="page">
+    <div class="container">
+      <div class="page-head">
+        <h1>Price Predictions</h1>
+        <p>Pick up or down for the next 15-minute round. Correct calls pay 2× your stake.</p>
+      </div>
+
+      <div class="grid g4 mt-3" id="predStats"></div>
+
+      <div class="card-head mt-3">
+        <div>
+          <div class="card-title" style="font-size:17px">Open rounds</div>
+          <div class="card-sub">Rounds close when the timer hits zero</div>
+        </div>
+      </div>
+      <div class="grid g3" id="roundGrid"></div>
+
+      <div class="card-head mt-3">
+        <div>
+          <div class="card-title" style="font-size:17px">Your predictions</div>
+          <div class="card-sub">Open, won and lost calls</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Round</th><th>Asset</th><th>Call</th><th class="num">Stake</th>
+                <th class="num">Entry</th><th class="num">Exit</th><th>Status</th><th class="num">Payout</th>
+              </tr>
+            </thead>
+            <tbody id="predBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card-head mt-3">
+        <div>
+          <div class="card-title" style="font-size:17px">Recent results</div>
+          <div class="card-sub">Settled rounds and their outcome</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr><th>Round</th><th>Asset</th><th class="num">Start</th><th class="num">End</th><th>Outcome</th><th>Closed</th></tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/countries.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    (function () {
+      var user = UI.requireAuth();
+      if (!user) return;
+
+      var selected = {}; // roundId -> 'up' | 'down'
+
+      function renderStats() {
+        var u = Store.currentUser();
+        var preds = Store.myPredictions(u.id);
+        var open = preds.filter(function (p) { return p.status === 'open'; });
+        var won = preds.filter(function (p) { return p.status === 'won'; });
+        var lost = preds.filter(function (p) { return p.status === 'lost'; });
+        var settled = won.length + lost.length;
+        var winRate = settled ? (won.length / settled * 100) : 0;
+
+        document.getElementById('predStats').innerHTML =
+          '<div class="card"><div class="stat"><span class="stat-label">Available</span>' +
+            '<span class="stat-value sm">' + UI.money(u.balance) + '</span></div></div>' +
+          '<div class="card"><div class="stat"><span class="stat-label">Open calls</span>' +
+            '<span class="stat-value sm">' + open.length + '</span></div></div>' +
+          '<div class="card"><div class="stat"><span class="stat-label">Win rate</span>' +
+            '<span class="stat-value sm">' + UI.num(winRate, 0) + '%</span></div></div>' +
+          '<div class="card"><div class="stat"><span class="stat-label">Won / lost</span>' +
+            '<span class="stat-value sm"><span class="text-up">' + won.length + '</span> / <span class="text-down">' + lost.length + '</span></span></div></div>';
+      }
+
+      function timeLeft(iso) {
+        var ms = new Date(iso).getTime() - Date.now();
+        if (ms <= 0) return '00:00';
+        var m = Math.floor(ms / 60000), s = Math.floor((ms % 60000) / 1000);
+        return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+      }
+
+      function renderRounds() {
+        var rounds = Store.openRounds();
+        if (!rounds.length) {
+          document.getElementById('roundGrid').innerHTML =
+            '<div class="card"><div class="empty"><p>No open rounds right now. Check back shortly.</p></div></div>';
+          return;
+        }
+        document.getElementById('roundGrid').innerHTML = rounds.map(function (r) {
+          var m = Store.market(r.symbol);
+          var sel = selected[r.id] || '';
+          return '<article class="card round-card" data-round="' + r.id + '">' +
+            '<div class="row-between">' +
+              '<div class="row"><span class="coin">' + r.symbol + '</span>' +
+                '<div><div style="font-weight:650;font-size:14px">' + r.symbol + ' / USD</div>' +
+                '<div class="text-faint" style="font-size:11.5px">Round #' + r.round + '</div></div></div>' +
+              '<div style="text-align:right"><div class="stat-label">Closes in</div>' +
+                '<div class="round-timer" data-timer="' + r.closesAt + '">' + timeLeft(r.closesAt) + '</div></div>' +
+            '</div>' +
+            '<div class="row-between" style="font-size:13px">' +
+              '<span class="text-faint">Entry price</span>' +
+              '<span class="mono">' + UI.price(r.startPrice) + '</span>' +
+            '</div>' +
+            '<div class="dir-btns">' +
+              '<button class="dir-btn up ' + (sel === 'up' ? 'sel' : '') + '" data-dir="up" data-round="' + r.id + '">' +
+                '<strong>▲ Up</strong><small>Pays 2×</small></button>' +
+              '<button class="dir-btn down ' + (sel === 'down' ? 'sel' : '') + '" data-dir="down" data-round="' + r.id + '">' +
+                '<strong>▼ Down</strong><small>Pays 2×</small></button>' +
+            '</div>' +
+            '<div class="field"><label>Stake (USD)</label>' +
+              '<input class="input" type="number" min="1" step="1" placeholder="10" data-amt="' + r.id + '" /></div>' +
+            '<button class="btn btn-primary btn-block" data-place="' + r.id + '">Place prediction</button>' +
+          '</article>';
+        }).join('');
+      }
+
+      function renderPreds() {
+        var u = Store.currentUser();
+        var preds = Store.myPredictions(u.id);
+        if (!preds.length) {
+          document.getElementById('predBody').innerHTML =
+            '<tr><td colspan="8"><div class="empty"><div class="ico">◇</div><p>No predictions yet. Pick a direction above.</p></div></td></tr>';
+          return;
+        }
+        document.getElementById('predBody').innerHTML = preds.map(function (p) {
+          var badge = p.status === 'won' ? 'badge-up' : p.status === 'lost' ? 'badge-down' : 'badge-warn';
+          return '<tr>' +
+            '<td class="mono">#' + p.round + '</td>' +
+            '<td><span class="coin sm" style="display:inline-grid;vertical-align:middle;margin-right:6px">' + p.symbol + '</span>' + p.symbol + '</td>' +
+            '<td><span class="' + (p.direction === 'up' ? 'text-up' : 'text-down') + '" style="font-weight:600">' +
+              (p.direction === 'up' ? '▲ Up' : '▼ Down') + '</span></td>' +
+            '<td class="num">' + UI.money(p.amount) + '</td>' +
+            '<td class="num text-dim">' + UI.price(p.entryPrice) + '</td>' +
+            '<td class="num text-dim">' + (p.exitPrice ? UI.price(p.exitPrice) : '—') + '</td>' +
+            '<td><span class="badge ' + badge + '">' + p.status + '</span></td>' +
+            '<td class="num ' + (p.status === 'won' ? 'text-up' : '') + '">' + (p.payout != null ? UI.money(p.payout) : '—') + '</td>' +
+          '</tr>';
+        }).join('');
+      }
+
+      function renderResults() {
+        var closed = Store.rounds().filter(function (r) { return r.status === 'closed'; });
+        if (!closed.length) {
+          document.getElementById('resultsBody').innerHTML =
+            '<tr><td colspan="6"><div class="empty"><p>No settled rounds yet.</p></div></td></tr>';
+          return;
+        }
+        document.getElementById('resultsBody').innerHTML = closed.map(function (r) {
+          var up = (r.endPrice || 0) >= r.startPrice;
+          return '<tr>' +
+            '<td class="mono">#' + r.round + '</td>' +
+            '<td><span class="coin sm" style="display:inline-grid;vertical-align:middle;margin-right:6px">' + r.symbol + '</span>' + r.symbol + '</td>' +
+            '<td class="num text-dim">' + UI.price(r.startPrice) + '</td>' +
+            '<td class="num">' + (r.endPrice ? UI.price(r.endPrice) : '—') + '</td>' +
+            '<td><span class="badge ' + (up ? 'badge-up' : 'badge-down') + '">' + (up ? '▲ Up' : '▼ Down') + '</span></td>' +
+            '<td class="text-dim" style="font-size:12.5px">' + UI.dateShort(r.closesAt) + '</td>' +
+          '</tr>';
+        }).join('');
+      }
+
+      function renderAll() { renderStats(); renderRounds(); renderPreds(); renderResults(); }
+
+      document.getElementById('roundGrid').addEventListener('click', function (e) {
+        var dirBtn = e.target.closest('[data-dir]');
+        if (dirBtn) {
+          var rid = dirBtn.dataset.round;
+          selected[rid] = dirBtn.dataset.dir;
+          var card = dirBtn.closest('.round-card');
+          card.querySelectorAll('.dir-btn').forEach(function (b) { b.classList.remove('sel'); });
+          dirBtn.classList.add('sel');
+          return;
+        }
+        var placeBtn = e.target.closest('[data-place]');
+        if (placeBtn) {
+          var id = placeBtn.dataset.place;
+          var dir = selected[id];
+          if (!dir) { UI.toast('Pick Up or Down first.', 'warn'); return; }
+          var amtEl = document.querySelector('[data-amt="' + id + '"]');
+          var amt = Number(amtEl.value);
+          var res = Store.placePrediction(id, dir, amt);
+          if (!res.ok) { UI.toast(res.error, 'err'); return; }
+          UI.toast('Prediction placed: ' + dir.toUpperCase() + ' ' + UI.money(amt));
+          selected[id] = null;
+          renderAll();
+        }
+      });
+
+      /* live countdown */
+      setInterval(function () {
+        document.querySelectorAll('[data-timer]').forEach(function (el) {
+          el.textContent = timeLeft(el.dataset.timer);
+        });
+      }, 1000);
+
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
