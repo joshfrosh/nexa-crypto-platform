@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Staking — Nexa</title>
+  <meta name="description" content="Stake crypto in flexible vaults and earn up to 12.5% APY. Unstake any time." />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="nav" id="nav"></header>
+
+  <main id="main" class="page">
+    <div class="container">
+      <div class="page-head">
+        <h1>Staking</h1>
+        <p>Lock assets in a vault and earn yield. Unstake any time — you keep what has accrued.</p>
+      </div>
+
+      <div class="grid g4 mt-3" id="stakeStats"></div>
+
+      <div class="card-head mt-3">
+        <div>
+          <div class="card-title" style="font-size:17px">Available vaults</div>
+          <div class="card-sub">Rates are set by the admin and can change at any time</div>
+        </div>
+      </div>
+      <div class="grid g3" id="planGrid"></div>
+
+      <div class="card-head mt-3">
+        <div>
+          <div class="card-title" style="font-size:17px">Your positions</div>
+          <div class="card-sub">Active and closed stakes</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Plan</th><th>Asset</th><th class="num">Staked</th><th class="num">APY</th>
+                <th class="num">Accrued</th><th>Started</th><th>Status</th><th class="num">Action</th>
+              </tr>
+            </thead>
+            <tbody id="stakeBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/countries.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    (function () {
+      var user = UI.requireAuth();
+      if (!user) return;
+
+      function accrued(st) {
+        if (st.status !== 'active') return st.payout ? st.payout - st.amount : 0;
+        var days = (Date.now() - new Date(st.startedAt).getTime()) / 86400000;
+        return st.amount * (st.apy / 100) * (days / 365);
+      }
+
+      function renderStats() {
+        var u = Store.currentUser();
+        var stakes = Store.myStakes(u.id);
+        var active = stakes.filter(function (s) { return s.status === 'active'; });
+        var totalStaked = active.reduce(function (a, s) { return a + s.amount; }, 0);
+        var totalAccrued = active.reduce(function (a, s) { return a + accrued(s); }, 0);
+        var avgApy = active.length ? active.reduce(function (a, s) { return a + s.apy; }, 0) / active.length : 0;
+
+        document.getElementById('stakeStats').innerHTML =
+          '<div class="card"><div class="stat"><span class="stat-label">Available balance</span>' +
+            '<span class="stat-value sm">' + UI.money(u.balance) + '</span></div></div>' +
+          '<div class="card"><div class="stat"><span class="stat-label">Total staked</span>' +
+            '<span class="stat-value sm">' + UI.money(totalStaked) + '</span></div></div>' +
+          '<div class="card"><div class="stat"><span class="stat-label">Accrued yield</span>' +
+            '<span class="stat-value sm text-up">' + UI.money(totalAccrued) + '</span></div></div>' +
+          '<div class="card"><div class="stat"><span class="stat-label">Avg. APY</span>' +
+            '<span class="stat-value sm">' + UI.num(avgApy, 1) + '%</span></div></div>';
+      }
+
+      function renderPlans() {
+        var plans = Store.stakingPlans();
+        if (!plans.length) {
+          document.getElementById('planGrid').innerHTML =
+            '<div class="card"><div class="empty"><p>No staking plans are available right now.</p></div></div>';
+          return;
+        }
+        document.getElementById('planGrid').innerHTML = plans.map(function (p) {
+          return '<article class="card card-hover plan">' +
+            '<div class="row-between">' +
+              '<div class="row"><span class="coin">' + p.symbol + '</span>' +
+                '<div><div style="font-weight:650;font-size:14px">' + UI.esc(p.name) + '</div>' +
+                '<div class="text-faint" style="font-size:11.5px">' + p.symbol + ' vault</div></div></div>' +
+              '<span class="badge badge-up">' + p.days + 'd</span>' +
+            '</div>' +
+            '<div class="plan-apy">' + UI.num(p.apy, 1) + '%<small> APY</small></div>' +
+            '<div class="plan-meta">' +
+              '<div><span>Lock period</span><span>' + p.days + ' days</span></div>' +
+              '<div><span>Minimum</span><span>' + UI.money(p.min) + '</span></div>' +
+              '<div><span>Maximum</span><span>' + UI.money(p.max) + '</span></div>' +
+            '</div>' +
+            '<button class="btn btn-primary btn-block" data-stake="' + p.id + '">Stake ' + p.symbol + '</button>' +
+          '</article>';
+        }).join('');
+      }
+
+      function renderStakes() {
+        var u = Store.currentUser();
+        var stakes = Store.myStakes(u.id);
+        if (!stakes.length) {
+          document.getElementById('stakeBody').innerHTML =
+            '<tr><td colspan="8"><div class="empty"><div class="ico">◇</div><p>You have no staking positions yet.</p></div></td></tr>';
+          return;
+        }
+        document.getElementById('stakeBody').innerHTML = stakes.map(function (s) {
+          var acc = accrued(s);
+          var badge = s.status === 'active' ? 'badge-up' : 'badge';
+          return '<tr>' +
+            '<td style="font-weight:600">' + UI.esc(s.planName) + '</td>' +
+            '<td><span class="coin sm" style="display:inline-grid;vertical-align:middle;margin-right:6px">' + s.symbol + '</span>' + s.symbol + '</td>' +
+            '<td class="num">' + UI.money(s.amount) + '</td>' +
+            '<td class="num">' + UI.num(s.apy, 1) + '%</td>' +
+            '<td class="num text-up">' + UI.money(acc) + '</td>' +
+            '<td class="text-dim" style="font-size:12.5px">' + UI.dateShort(s.startedAt) + '</td>' +
+            '<td><span class="badge ' + badge + '">' + s.status + '</span></td>' +
+            '<td class="num">' + (s.status === 'active'
+              ? '<button class="btn btn-sm btn-outline" data-unstake="' + s.id + '">Unstake</button>'
+              : '<span class="text-faint" style="font-size:12px">' + UI.money(s.payout || 0) + '</span>') + '</td>' +
+          '</tr>';
+        }).join('');
+      }
+
+      function renderAll() { renderStats(); renderPlans(); renderStakes(); }
+
+      document.getElementById('planGrid').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-stake]');
+        if (!b) return;
+        var plan = Store.allStakingPlans().find(function (p) { return p.id === b.dataset.stake; });
+        if (!plan) return;
+        var u = Store.currentUser();
+        UI.modal({
+          title: 'Stake in ' + plan.name,
+          body:
+            '<div class="row-between" style="font-size:13.5px"><span class="text-faint">APY</span><span class="mono text-up">' + UI.num(plan.apy, 1) + '%</span></div>' +
+            '<div class="row-between" style="font-size:13.5px"><span class="text-faint">Lock period</span><span class="mono">' + plan.days + ' days</span></div>' +
+            '<div class="row-between" style="font-size:13.5px"><span class="text-faint">Available</span><span class="mono">' + UI.money(u.balance) + '</span></div>' +
+            '<div class="field"><label for="stakeAmt">Amount to stake (USD)</label>' +
+              '<input class="input" id="stakeAmt" type="number" min="' + plan.min + '" step="0.01" value="' + plan.min + '" />' +
+              '<div class="hint">Min ' + UI.money(plan.min) + ' · Max ' + UI.money(plan.max) + '</div></div>' +
+            '<div class="error-text" id="stakeErr"></div>',
+          confirmText: 'Confirm stake',
+          onConfirm: function (root) {
+            var amt = Number(root.querySelector('#stakeAmt').value);
+            var res = Store.stake(plan.id, amt);
+            if (!res.ok) { root.querySelector('#stakeErr').textContent = res.error; return false; }
+            UI.toast('Staked ' + UI.money(amt) + ' in ' + plan.name);
+            renderAll();
+            return true;
+          }
+        });
+      });
+
+      document.getElementById('stakeBody').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-unstake]');
+        if (!b) return;
+        var st = Store.myStakes(Store.currentUser().id).find(function (s) { return s.id === b.dataset.unstake; });
+        if (!st) return;
+        var acc = accrued(st);
+        UI.modal({
+          title: 'Unstake ' + st.planName,
+          body: '<p class="text-dim" style="font-size:13.5px">You will receive your principal plus accrued yield back into your available balance.</p>' +
+            '<div class="row-between" style="font-size:13.5px"><span class="text-faint">Principal</span><span class="mono">' + UI.money(st.amount) + '</span></div>' +
+            '<div class="row-between" style="font-size:13.5px"><span class="text-faint">Accrued yield</span><span class="mono text-up">' + UI.money(acc) + '</span></div>' +
+            '<div class="row-between" style="font-size:14px;font-weight:700;border-top:1px solid var(--border);padding-top:10px"><span>Total payout</span><span class="mono">' + UI.money(st.amount + acc) + '</span></div>',
+          confirmText: 'Unstake now',
+          onConfirm: function () {
+            var res = Store.unstake(st.id);
+            if (!res.ok) { UI.toast(res.error, 'err'); return false; }
+            UI.toast('Unstaked — ' + UI.money(res.payout) + ' returned');
+            renderAll();
+            return true;
+          }
+        });
+      });
+
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
