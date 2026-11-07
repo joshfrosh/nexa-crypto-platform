@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nexa — Trade, stake and predict crypto</title>
+  <meta name="description" content="Nexa is a crypto platform for spot trading, staking and up/down price predictions — with a wallet, bonuses and admin-controlled deposits and withdrawals." />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="nav" id="nav"></header>
+
+  <main id="main">
+    <!-- ============================================================ HERO -->
+    <section class="hero">
+      <div class="container hero-inner">
+        <div>
+          <span class="badge badge-up badge-dot">Live demo · mock data</span>
+          <h1 class="mt-2">Trade, stake and predict crypto <span class="accent">in one place.</span></h1>
+          <p class="hero-lead">
+            Spot markets, flexible staking vaults and 15-minute up/down prediction rounds —
+            with a wallet, claimable bonuses and an admin-controlled treasury.
+          </p>
+          <div class="hero-cta">
+            <a class="btn btn-primary btn-lg" href="auth.html#signup">Create free account</a>
+            <a class="btn btn-outline btn-lg" href="trade.html">Explore markets</a>
+          </div>
+          <div class="hero-trust">
+            <div><strong>12</strong><span>Spot markets</span></div>
+            <div><strong>4</strong><span>Staking vaults</span></div>
+            <div><strong>15m</strong><span>Prediction rounds</span></div>
+            <div><strong>24/7</strong><span>Admin treasury</span></div>
+          </div>
+        </div>
+
+        <div class="hero-visual">
+          <div class="mock-card">
+            <div class="mock-head">
+              <div class="row">
+                <span class="coin lg" style="background:rgba(247,147,26,.16);color:#f7931a">BTC</span>
+                <div>
+                  <div style="font-weight:650;font-size:14px">Bitcoin</div>
+                  <div class="text-faint" style="font-size:11.5px">BTC / USD</div>
+                </div>
+              </div>
+              <span class="badge badge-up" id="heroDelta">+2.41%</span>
+            </div>
+            <div class="mock-price" id="heroPrice">$68,420.50</div>
+            <div class="mock-chart"><svg id="heroChart" style="width:100%;height:100%"></svg></div>
+            <div class="mock-rows" id="heroRows"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================== FEATURES -->
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-head">
+          <div class="eyebrow">Everything in one account</div>
+          <h2>Five products, one balance</h2>
+          <p>Move funds between trading, staking and predictions instantly. Every deposit and withdrawal is reviewed by the account admin before it settles.</p>
+        </div>
+        <div class="grid g3">
+          <article class="card card-hover feature">
+            <div class="feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg>
+            </div>
+            <h3>Spot trading</h3>
+            <p>Buy and sell twelve major assets at live mock prices, with instant fills and a full order history.</p>
+            <a class="btn btn-sm btn-outline mt-1" href="trade.html">Open Trade</a>
+          </article>
+
+          <article class="card card-hover feature">
+            <div class="feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M12 12v4"/></svg>
+            </div>
+            <h3>Staking vaults</h3>
+            <p>Lock assets for 30 to 180 days and earn up to 12.5% APY. Unstake any time and keep the accrued yield.</p>
+            <a class="btn btn-sm btn-outline mt-1" href="staking.html">View plans</a>
+          </article>
+
+          <article class="card card-hover feature">
+            <div class="feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 10l7-7 7 7"/></svg>
+            </div>
+            <h3>Price predictions</h3>
+            <p>Call up or down on 15-minute rounds. Correct calls pay double — results settle automatically.</p>
+            <a class="btn btn-sm btn-outline mt-1" href="predictions.html">Play a round</a>
+          </article>
+
+          <article class="card card-hover feature">
+            <div class="feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2v-7"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>
+            </div>
+            <h3>Bonuses</h3>
+            <p>Claim welcome credits, deposit matches and seasonal boosts. The admin controls every offer.</p>
+            <a class="btn btn-sm btn-outline mt-1" href="bonuses.html">Claim a bonus</a>
+          </article>
+
+          <article class="card card-hover feature">
+            <div class="feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+            </div>
+            <h3>Wallet &amp; treasury</h3>
+            <p>Request deposits and withdrawals in six assets. The admin approves or rejects each one from the panel.</p>
+            <a class="btn btn-sm btn-outline mt-1" href="wallet.html">Open wallet</a>
+          </article>
+
+          <article class="card card-hover feature">
+            <div class="feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+            </div>
+            <h3>KYC verification</h3>
+            <p>Submit identity documents in-app. The admin reviews and approves or rejects each submission.</p>
+            <a class="btn btn-sm btn-outline mt-1" href="kyc.html">Verify identity</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================== HOW IT WORKS -->
+    <section class="section" style="background:var(--bg-elev);border-top:1px solid var(--border-soft);border-bottom:1px solid var(--border-soft)">
+      <div class="container">
+        <div class="section-head">
+          <div class="eyebrow">How it works</div>
+          <h2>Fund, trade, withdraw — in three steps</h2>
+        </div>
+        <div class="grid g3">
+          <div class="card">
+            <div class="stat-label">Step 01</div>
+            <h3 class="mt-1" style="font-size:17px">Create your account</h3>
+            <p class="text-dim mt-1" style="font-size:13.5px">Sign up with Gmail, iCloud, email or a phone number from any country. No card required.</p>
+          </div>
+          <div class="card">
+            <div class="stat-label">Step 02</div>
+            <h3 class="mt-1" style="font-size:17px">Request a deposit</h3>
+            <p class="text-dim mt-1" style="font-size:13.5px">Pick an asset and network, then submit the request. The admin approves it and your balance is credited.</p>
+          </div>
+          <div class="card">
+            <div class="stat-label">Step 03</div>
+            <h3 class="mt-1" style="font-size:17px">Trade, stake or predict</h3>
+            <p class="text-dim mt-1" style="font-size:13.5px">Use your balance across all three products. Withdraw whenever the admin approves your request.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SECURITY -->
+    <section class="section" id="security">
+      <div class="container">
+        <div class="grid g2" style="align-items:center;gap:40px">
+          <div>
+            <div class="eyebrow">Built for control</div>
+            <h2 style="font-size:clamp(24px,3vw,32px);letter-spacing:-.03em">Every movement of funds is human-approved</h2>
+            <p class="text-dim mt-2" style="font-size:15px;line-height:1.65">
+              Deposits and withdrawals never settle automatically. A user submits a request, and the
+              account admin reviews it in the admin panel — approving credits the balance, rejecting
+              leaves it untouched. Every admin action is logged and can be undone.
+            </p>
+            <ul class="stack mt-3" style="gap:12px">
+              <li class="row" style="align-items:flex-start"><span class="badge badge-up">✓</span><span class="text-dim" style="font-size:14px">Approve or reject KYC, deposits and withdrawals</span></li>
+              <li class="row" style="align-items:flex-start"><span class="badge badge-up">✓</span><span class="text-dim" style="font-size:14px">Credit or debit any user balance with a reason</span></li>
+              <li class="row" style="align-items:flex-start"><span class="badge badge-up">✓</span><span class="text-dim" style="font-size:14px">Create, edit, enable or disable bonuses and staking plans</span></li>
+              <li class="row" style="align-items:flex-start"><span class="badge badge-up">✓</span><span class="text-dim" style="font-size:14px">One-click undo for every admin action</span></li>
+            </ul>
+          </div>
+          <div class="card card-pad-lg">
+            <div class="row-between mb-2">
+              <div class="card-title">Admin panel preview</div>
+              <span class="badge badge-warn">Restricted</span>
+            </div>
+            <div class="stack" style="gap:10px">
+              <div class="row-between" style="padding:12px;background:var(--bg-elev);border-radius:9px">
+                <div><div style="font-size:13.5px;font-weight:600">Deposit · USDT 5,000</div><div class="text-faint" style="font-size:11.5px">demo@nexa.app · 3d ago</div></div>
+                <span class="badge badge-up">Approved</span>
+              </div>
+              <div class="row-between" style="padding:12px;background:var(--bg-elev);border-radius:9px">
+                <div><div style="font-size:13.5px;font-weight:600">Withdrawal · BTC 0.05</div><div class="text-faint" style="font-size:11.5px">demo@nexa.app · 5h ago</div></div>
+                <span class="badge badge-warn">Pending</span>
+              </div>
+              <div class="row-between" style="padding:12px;background:var(--bg-elev);border-radius:9px">
+                <div><div style="font-size:13.5px;font-weight:600">KYC · Demo Trader</div><div class="text-faint" style="font-size:11.5px">Passport · 2h ago</div></div>
+                <span class="badge badge-warn">Pending</span>
+              </div>
+            </div>
+            <p class="hint mt-2">Sign in with the admin account to open the live panel.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================ FAQ -->
+    <section class="section" id="faq" style="background:var(--bg-elev);border-top:1px solid var(--border-soft)">
+      <div class="container">
+        <div class="section-head"><div class="eyebrow">FAQ</div><h2>Common questions</h2></div>
+        <div class="grid g2">
+          <div class="card"><h3 style="font-size:15px">Is this a real exchange?</h3><p class="text-dim mt-1" style="font-size:13.5px">No. Nexa is a front-end demonstration running entirely on mock data in your browser. No real funds are ever moved.</p></div>
+          <div class="card"><h3 style="font-size:15px">Why do deposits need approval?</h3><p class="text-dim mt-1" style="font-size:13.5px">It mirrors how custodial platforms reconcile on-chain transfers. Here the admin plays the role of the treasury desk.</p></div>
+          <div class="card"><h3 style="font-size:15px">How do I get demo funds?</h3><p class="text-dim mt-1" style="font-size:13.5px">Sign in as the demo user (demo@nexa.app / demo1234) — the account is pre-funded with $12,500.</p></div>
+          <div class="card"><h3 style="font-size:15px">Can I undo an admin action?</h3><p class="text-dim mt-1" style="font-size:13.5px">Yes. Every admin mutation pushes a snapshot, and the Undo button in the panel restores the previous state.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================ CTA -->
+    <section class="section">
+      <div class="container">
+        <div class="card card-pad-lg center" style="background:var(--surface-2);border-color:var(--surface-3)">
+          <h2 style="font-size:clamp(22px,3vw,30px);letter-spacing:-.03em">Ready to try the full flow?</h2>
+          <p class="text-dim mt-1" style="font-size:15px">Create an account, request a deposit, and watch the admin panel settle it.</p>
+          <div class="row mt-3" style="justify-content:center;flex-wrap:wrap">
+            <a class="btn btn-primary btn-lg" href="auth.html#signup">Get started free</a>
+            <a class="btn btn-outline btn-lg" href="auth.html">Sign in to demo</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/countries.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    (function () {
+      var markets = Store.markets();
+      var btc = markets.find(function (m) { return m.symbol === 'BTC'; });
+      if (btc) {
+        document.getElementById('heroPrice').textContent = UI.price(btc.price);
+        var d = document.getElementById('heroDelta');
+        d.textContent = UI.pct(btc.change24h);
+        d.className = 'badge ' + (btc.change24h >= 0 ? 'badge-up' : 'badge-down');
+        UI.drawChart(document.getElementById('heroChart'), btc.series, { height: 120 });
+      }
+      var rows = markets.slice(0, 4).map(function (m) {
+        return '<div class="mock-row">' +
+          '<span class="sym"><span class="coin sm">' + m.symbol + '</span>' + m.name + '</span>' +
+          '<span class="mono">' + UI.price(m.price) + '</span>' +
+          '<span class="' + (m.change24h >= 0 ? 'text-up' : 'text-down') + '" style="font-size:12px;font-weight:600;min-width:56px;text-align:right">' + UI.pct(m.change24h) + '</span>' +
+        '</div>';
+      }).join('');
+      document.getElementById('heroRows').innerHTML = rows;
+    })();
+  </script>
+</body>
+</html>
