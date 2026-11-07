@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — Nexa</title>
+  <meta name="description" content="Restricted admin panel: KYC, deposits, withdrawals, balances, bonuses, users, staking plans and prediction rounds." />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="nav" id="nav"></header>
+
+  <main id="main" class="page">
+    <div class="container">
+      <div class="page-head row-between">
+        <div>
+          <h1>Admin Panel</h1>
+          <p>Signed in as <strong id="adminEmail">—</strong> · sole administrator</p>
+        </div>
+        <div class="row" style="gap:8px">
+          <button class="btn btn-sm btn-warn" id="undoBtn" disabled>↶ Undo last action</button>
+          <button class="btn btn-sm btn-outline" id="resetBtn">Reset demo data</button>
+        </div>
+      </div>
+
+      <div class="undo-bar hidden" id="undoBar">
+        <span>↶</span>
+        <span id="undoText">Last action can be undone.</span>
+        <span class="spacer"></span>
+        <button class="btn btn-sm btn-warn" id="undoBarBtn">Undo</button>
+      </div>
+
+      <div class="admin-shell mt-3">
+        <!-- ============================================ sidebar -->
+        <nav class="admin-side" id="adminSide">
+          <button class="active" data-panel="overview">Overview</button>
+          <button data-panel="kyc">KYC <span class="count" id="cKyc">0</span></button>
+          <button data-panel="deposits">Deposits <span class="count" id="cDep">0</span></button>
+          <button data-panel="withdrawals">Withdrawals <span class="count" id="cWd">0</span></button>
+          <button data-panel="users">Users <span class="count" id="cUsers">0</span></button>
+          <button data-panel="balances">Balances</button>
+          <button data-panel="bonuses">Bonuses <span class="count" id="cBon">0</span></button>
+          <button data-panel="plans">Staking plans</button>
+          <button data-panel="rounds">Prediction rounds</button>
+          <button data-panel="audit">Audit log</button>
+        </nav>
+
+        <!-- ============================================ panels -->
+        <div class="admin-panel" id="adminPanel">
+
+          <!-- OVERVIEW -->
+          <section class="panel active" data-panel="overview">
+            <div class="grid g4" id="overviewStats"></div>
+            <div class="grid g2 mt-3">
+              <div class="card">
+                <div class="card-head"><div class="card-title">Pending queue</div></div>
+                <div id="pendingQueue"></div>
+              </div>
+              <div class="card">
+                <div class="card-head"><div class="card-title">Recent admin activity</div></div>
+                <div id="recentActivity"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- KYC -->
+          <section class="panel" data-panel="kyc">
+            <div class="card">
+              <div class="card-head">
+                <div><div class="card-title">KYC submissions</div><div class="card-sub">Approve or reject identity verification</div></div>
+              </div>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th>User</th><th>Document</th><th>Country</th><th>Submitted</th><th>Status</th><th class="num">Actions</th></tr></thead>
+                  <tbody id="kycBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- DEPOSITS -->
+          <section class="panel" data-panel="deposits">
+            <div class="card">
+              <div class="card-head">
+                <div><div class="card-title">Deposit requests</div><div class="card-sub">Approving credits the user's balance</div></div>
+              </div>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th>User</th><th>Asset</th><th class="num">Amount</th><th>Network</th><th>Requested</th><th>Status</th><th class="num">Actions</th></tr></thead>
+                  <tbody id="depBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- WITHDRAWALS -->
+          <section class="panel" data-panel="withdrawals">
+            <div class="card">
+              <div class="card-head">
+                <div><div class="card-title">Withdrawal requests</div><div class="card-sub">Approving debits the user's balance</div></div>
+              </div>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th>User</th><th>Asset</th><th class="num">Amount</th><th>Address</th><th>Requested</th><th>Status</th><th class="num">Actions</th></tr></thead>
+                  <tbody id="wdBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- USERS -->
+          <section class="panel" data-panel="users">
+            <div class="card">
+              <div class="card-head">
+                <div><div class="card-title">Users</div><div class="card-sub">Manage accounts and status</div></div>
+                <input class="input" id="userSearch" placeholder="Search email or name…" style="max-width:240px" />
+              </div>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th>User</th><th>Role</th><th class="num">Balance</th><th>KYC</th><th>Status</th><th>Joined</th><th class="num">Actions</th></tr></thead>
+                  <tbody id="usersBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- BALANCES -->
+          <section class="panel" data-panel="balances">
+            <div class="card">
+              <div class="card-head">
+                <div><div class="card-title">Credit / debit balances</div><div class="card-sub">Manual adjustments are logged and reversible</div></div>
+              </div>
+              <div class="grid g2" style="gap:16px">
+                <div class="field">
+                  <label for="balUser">User</label>
+                  <select class="select" id="balUser"></select>
+                </div>
+                <div class="field">
+                  <label for="balAmount">Amount (negative to debit)</label>
+                  <input class="input" id="balAmount" type="number" step="0.01" placeholder="e.g. 250 or -100" />
+                </div>
+                <div class="field full">
+                  <label for="balReason">Reason</label>
+                  <input class="input" id="balReason" placeholder="e.g. Manual deposit correction" />
+                </div>
+                <div class="full">
+                  <div class="error-text" id="balError"></div>
+                  <button class="btn btn-primary" id="balSubmit">Apply adjustment</button>
+                </div>
+              </div>
+            </div>
+            <div class="card mt-3">
+              <div class="card-head"><div class="card-title">Current balances</div></div>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th>User</th><th>Email</th><th class="num">Balance</th></tr></thead>
+                  <tbody id="balBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- BONUSES -->
+          <section class="panel" data-panel="bonuses">
+            <div class="card">
+              <div class="card-head">
+                <div><div class="card-title">Bonuses</div><div class="card-sub">Create, edit, enable or disable offers</div></div>
+                <button class="btn btn-sm btn-primary" id="newBonusBtn">+ New bonus</button>
+              </div>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th>Title</th><th class="num">Amount</th><th class="num">Wager</th><th>Code</th><th>Status</th><th class="num">Actions</th></tr></thead>
+                  <tbody id="bonusBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- PLANS -->
+          <section class="panel" data-panel="plans">
+            <div class="card">
+              <div class="card-head">
+                <div><div class="card-title">Staking plans</div><div class="card-sub">Rates and limits shown to users</div></div>
+                <button class="btn btn-sm btn-primary" id="newPlanBtn">+ New plan</button>
+              </div>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th>Name</th><th>Asset</th><th class="num">APY</th><th class="num">Days</th><th class="num">Min</th><th class="num">Max</th><th>Status</th><th class="num">Actions</th></tr></thead>
+                  <tbody id="planBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- ROUNDS -->
+          <section class="panel" data-panel="rounds">
+            <div class="card">
+              <div class="card-head">
+                <div><div class="card-title">Prediction rounds</div><div class="card-sub">Create rounds and resolve them with a closing price</div></div>
+                <button class="btn btn-sm btn-primary" id="newRoundBtn">+ New round</button>
+              </div>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th>Asset</th><th class="num">Round</th><th class="num">Start</th><th class="num">End</th><th>Status</th><th>Closes</th><th class="num">Actions</th></tr></thead>
+                  <tbody id="roundBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- AUDIT -->
+          <section class="panel" data-panel="audit">
+            <div class="card">
+              <div class="card-head">
+                <div><div class="card-title">Audit log</div><div class="card-sub">Every admin action, newest first</div></div>
+              </div>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead><tr><th>Action</th><th>Detail</th><th>By</th><th>When</th></tr></thead>
+                  <tbody id="auditBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/countries.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    (function () {
+      var admin = UI.requireAdmin();
+      if (!admin) return;
+
+      document.getElementById('adminEmail').textContent = admin.email;
+
+      function userEmail(id) {
+        var u = Store.allUsers().find(function (x) { return x.id === id; });
+        return u ? u.email : '—';
+      }
+      function userName(id) {
+        var u = Store.allUsers().find(function (x) { return x.id === id; });
+        return u ? u.name : '—';
+      }
+      function statusBadge(s) {
+        var map = { pending: 'badge-warn', approved: 'badge-up', rejected: 'badge-down', active: 'badge-up', suspended: 'badge-down', open: 'badge-info', closed: 'badge' };
+        return '<span class="badge ' + (map[s] || 'badge') + '">' + s + '</span>';
+      }
+
+      /* ---------------------------------------------------- overview */
+      function renderOverview() {
+        var users = Store.allUsers();
+        var txs = Store.allTransactions();
+        var pendingDep = txs.filter(function (t) { return t.type === 'deposit' && t.status === 'pending'; });
+        var pendingWd = txs.filter(function (t) { return t.type === 'withdrawal' && t.status === 'pending'; });
+        var pendingKyc = Store.allKyc().filter(function (k) { return k.status === 'pending'; });
+        var totalBal = users.reduce(function (a, u) { return a + u.balance; }, 0);
+
+        document.getElementById('overviewStats').innerHTML =
+          '<div class="card"><div class="stat"><span class="stat-label">Total users</span><span class="stat-value sm">' + users.length + '</span></div></div>' +
+          '<div class="card"><div class="stat"><span class="stat-label">Custodied balance</span><span class="stat-value sm">' + UI.money(totalBal) + '</span></div></div>' +
+          '<div class="card"><div class="stat"><span class="stat-label">Pending deposits</span><span class="stat-value sm text-warn">' + pendingDep.length + '</span></div></div>' +
+          '<div class="card"><div class="stat"><span class="stat-label">Pending withdrawals</span><span class="stat-value sm text-warn">' + pendingWd.length + '</span></div></div>';
+
+        var queue = [];
+        pendingKyc.forEach(function (k) { queue.push({ label: 'KYC · ' + k.fullName, sub: userEmail(k.userId), panel: 'kyc' }); });
+        pendingDep.forEach(function (t) { queue.push({ label: 'Deposit · ' + t.asset + ' ' + UI.num(t.amount, 2), sub: userEmail(t.userId), panel: 'deposits' }); });
+        pendingWd.forEach(function (t) { queue.push({ label: 'Withdrawal · ' + t.asset + ' ' + UI.num(t.amount, 2), sub: userEmail(t.userId), panel: 'withdrawals' }); });
+
+        document.getElementById('pendingQueue').innerHTML = queue.length
+          ? queue.map(function (q) {
+              return '<div class="row-between" style="padding:10px 0;border-bottom:1px solid var(--border-soft)">' +
+                '<div><div style="font-size:13.5px;font-weight:600">' + UI.esc(q.label) + '</div>' +
+                '<div class="text-faint" style="font-size:11.5px">' + UI.esc(q.sub) + '</div></div>' +
+                '<button class="btn btn-sm btn-outline" data-goto="' + q.panel + '">Review</button></div>';
+            }).join('')
+          : '<div class="empty"><div class="ico">✓</div><p>Nothing pending. All caught up.</p></div>';
+
+        var log = Store.auditLog().slice(0, 6);
+        document.getElementById('recentActivity').innerHTML = log.length
+          ? log.map(function (l) {
+              return '<div style="padding:9px 0;border-bottom:1px solid var(--border-soft)">' +
+                '<div style="font-size:13px;font-weight:600">' + UI.esc(l.action) + '</div>' +
+                '<div class="text-faint" style="font-size:11.5px">' + UI.esc(l.detail) + ' · ' + UI.timeAgo(l.at) + '</div></div>';
+            }).join('')
+          : '<div class="empty"><p>No activity yet.</p></div>';
+      }
+
+      /* ---------------------------------------------------- KYC */
+      function renderKyc() {
+        var list = Store.allKyc();
+        document.getElementById('kycBody').innerHTML = list.length ? list.map(function (k) {
+          var actions = k.status === 'pending'
+            ? '<button class="btn btn-sm btn-primary" data-kyc-ok="' + k.id + '">Approve</button> ' +
+              '<button class="btn btn-sm btn-danger" data-kyc-no="' + k.id + '">Reject</button>'
+            : '<span class="text-faint" style="font-size:12px">' + UI.dateShort(k.reviewedAt) + '</span>';
+          return '<tr>' +
+            '<td><div style="font-weight:600">' + UI.esc(k.fullName) + '</div><div class="text-faint" style="font-size:11.5px">' + UI.esc(userEmail(k.userId)) + '</div></td>' +
+            '<td style="text-transform:capitalize">' + UI.esc(k.docType.replace('_', ' ')) + '<div class="text-faint mono" style="font-size:11.5px">' + UI.esc(k.docNumber) + '</div></td>' +
+            '<td class="text-dim">' + UI.esc(k.country) + '</td>' +
+            '<td class="text-dim" style="font-size:12.5px">' + UI.dateShort(k.submittedAt) + '</td>' +
+            '<td>' + statusBadge(k.status) + '</td>' +
+            '<td class="num nowrap">' + actions + '</td>' +
+          '</tr>';
+        }).join('') : '<tr><td colspan="6"><div class="empty"><p>No KYC submissions.</p></div></td></tr>';
+      }
+
+      /* ---------------------------------------------------- deposits / withdrawals */
+      function renderTxTable(type, tbodyId) {
+        var list = Store.allTransactions().filter(function (t) { return t.type === type; });
+        document.getElementById(tbodyId).innerHTML = list.length ? list.map(function (t) {
+          var actions = t.status === 'pending'
+            ? '<button class="btn btn-sm btn-primary" data-tx-ok="' + t.id + '">Approve</button> ' +
+              '<button class="btn btn-sm btn-danger" data-tx-no="' + t.id + '">Reject</button>'
+            : '<span class="text-faint" style="font-size:12px">' + UI.dateShort(t.reviewedAt) + '</span>';
+          var mid = type === 'withdrawal'
+            ? '<td class="mono text-dim" style="font-size:11.5px;max-width:180px;overflow:hidden;text-overflow:ellipsis">' + UI.esc(t.address || '—') + '</td>'
+            : '<td class="text-dim" style="font-size:12.5px">' + UI.esc(t.network || '—') + '</td>';
+          return '<tr>' +
+            '<td><div style="font-weight:600">' + UI.esc(userName(t.userId)) + '</div><div class="text-faint" style="font-size:11.5px">' + UI.esc(userEmail(t.userId)) + '</div></td>' +
+            '<td>' + t.asset + '</td>' +
+            '<td class="num">' + UI.num(t.amount, t.asset === 'USD' ? 2 : 6) + '</td>' +
+            mid +
+            '<td class="text-dim" style="font-size:12.5px">' + UI.dateShort(t.createdAt) + '</td>' +
+            '<td>' + statusBadge(t.status) + '</td>' +
+            '<td class="num nowrap">' + actions + '</td>' +
+          '</tr>';
+        }).join('') : '<tr><td colspan="7"><div class="empty"><p>No ' + type + ' requests.</p></div></td></tr>';
+      }
+
+      /* ---------------------------------------------------- users */
+      function renderUsers() {
+        var q = (document.getElementById('userSearch').value || '').toLowerCase();
+        var list = Store.allUsers().filter(function (u) {
+          return !q || u.email.toLowerCase().indexOf(q) !== -1 || u.name.toLowerCase().indexOf(q) !== -1;
+        });
+        document.getElementById('usersBody').innerHTML = list.map(function (u) {
+          var isAdmin = u.email.toLowerCase() === window.APP_CONFIG.ADMIN_EMAIL.toLowerCase();
+          var actions = isAdmin
+            ? '<span class="badge badge-info">Protected</span>'
+            : (u.status === 'active'
+                ? '<button class="btn btn-sm btn-warn" data-user-suspend="' + u.id + '">Suspend</button> '
+                : '<button class="btn btn-sm btn-primary" data-user-activate="' + u.id + '">Activate</button> ') +
+              '<button class="btn btn-sm btn-danger" data-user-del="' + u.id + '">Delete</button>';
+          return '<tr>' +
+            '<td><div style="font-weight:600">' + UI.esc(u.name) + '</div><div class="text-faint" style="font-size:11.5px">' + UI.esc(u.email) + '</div></td>' +
+            '<td>' + (isAdmin ? '<span class="badge badge-info">admin</span>' : '<span class="badge">user</span>') + '</td>' +
+            '<td class="num">' + UI.money(u.balance) + '</td>' +
+            '<td>' + statusBadge(u.kycStatus === 'approved' ? 'approved' : u.kycStatus === 'pending' ? 'pending' : u.kycStatus === 'rejected' ? 'rejected' : '') + '</td>' +
+            '<td>' + statusBadge(u.status) + '</td>' +
+            '<td class="text-dim" style="font-size:12.5px">' + UI.dateShort(u.createdAt) + '</td>' +
+            '<td class="num nowrap">' + actions + '</td>' +
+          '</tr>';
+        }).join('');
+      }
+
+      /* ---------------------------------------------------- balances */
+      function renderBalances() {
+        var users = Store.allUsers();
+        var sel = document.getElementById('balUser');
+        var cur = sel.value;
+        sel.innerHTML = users.map(function (u) {
+          return '<option value="' + u.id + '">' + UI.esc(u.name) + ' — ' + UI.esc(u.email) + '</option>';
+        }).join('');
+        if (cur) sel.value = cur;
+
+        document.getElementById('balBody').innerHTML = users.map(function (u) {
+          return '<tr><td style="font-weight:600">' + UI.esc(u.name) + '</td>' +
+            '<td class="text-dim">' + UI.esc(u.email) + '</td>' +
+            '<td class="num">' + UI.money(u.balance) + '</td></tr>';
+        }).join('');
+      }
+
+      /* ---------------------------------------------------- bonuses */
+      function renderBonuses() {
+        var list = Store.allBonuses();
+        document.getElementById('bonusBody').innerHTML = list.length ? list.map(function (b) {
+          return '<tr>' +
+            '<td><div style="font-weight:600">' + UI.esc(b.title) + '</div><div class="text-faint" style="font-size:11.5px;max-width:260px">' + UI.esc(b.description) + '</div></td>' +
+            '<td class="num">' + UI.money(b.amount) + '</td>' +
+            '<td class="num">' + (b.wager ? b.wager + '×' : '—') + '</td>' +
+            '<td class="mono" style="font-size:12px">' + UI.esc(b.code || '—') + '</td>' +
+            '<td>' + (b.active ? '<span class="badge badge-up">active</span>' : '<span class="badge">disabled</span>') + '</td>' +
+            '<td class="num nowrap">' +
+              '<button class="btn btn-sm btn-outline" data-bonus-edit="' + b.id + '">Edit</button> ' +
+              '<button class="btn btn-sm ' + (b.active ? 'btn-warn' : 'btn-primary') + '" data-bonus-toggle="' + b.id + '">' + (b.active ? 'Disable' : 'Enable') + '</button> ' +
+              '<button class="btn btn-sm btn-danger" data-bonus-del="' + b.id + '">Delete</button>' +
+            '</td>' +
+          '</tr>';
+        }).join('') : '<tr><td colspan="6"><div class="empty"><p>No bonuses yet.</p></div></td></tr>';
+      }
+
+      /* ---------------------------------------------------- plans */
+      function renderPlans() {
+        var list = Store.allStakingPlans();
+        document.getElementById('planBody').innerHTML = list.length ? list.map(function (p) {
+          return '<tr>' +
+            '<td style="font-weight:600">' + UI.esc(p.name) + '</td>' +
+            '<td>' + p.symbol + '</td>' +
+            '<td class="num text-up">' + UI.num(p.apy, 1) + '%</td>' +
+            '<td class="num">' + p.days + '</td>' +
+            '<td class="num">' + UI.money(p.min) + '</td>' +
+            '<td class="num">' + UI.money(p.max) + '</td>' +
+            '<td>' + (p.active ? '<span class="badge badge-up">active</span>' : '<span class="badge">disabled</span>') + '</td>' +
+            '<td class="num nowrap">' +
+              '<button class="btn btn-sm btn-outline" data-plan-edit="' + p.id + '">Edit</button> ' +
+              '<button class="btn btn-sm btn-danger" data-plan-del="' + p.id + '">Delete</button>' +
+            '</td>' +
+          '</tr>';
+        }).join('') : '<tr><td colspan="8"><div class="empty"><p>No staking plans.</p></div></td></tr>';
+      }
+
+      /* ---------------------------------------------------- rounds */
+      function renderRounds() {
+        var list = Store.rounds();
+        document.getElementById('roundBody').innerHTML = list.length ? list.map(function (r) {
+          var actions = r.status === 'open'
+            ? '<button class="btn btn-sm btn-primary" data-round-resolve="' + r.id + '">Resolve</button> '
+            : '<span class="text-faint" style="font-size:12px">settled</span> ';
+          actions += '<button class="btn btn-sm btn-danger" data-round-del="' + r.id + '">Delete</button>';
+          return '<tr>' +
+            '<td><span class="coin sm" style="display:inline-grid;vertical-align:middle;margin-right:6px">' + r.symbol + '</span>' + r.symbol + '</td>' +
+            '<td class="num mono">#' + r.round + '</td>' +
+            '<td class="num">' + UI.price(r.startPrice) + '</td>' +
+            '<td class="num">' + (r.endPrice ? UI.price(r.endPrice) : '—') + '</td>' +
+            '<td>' + statusBadge(r.status) + '</td>' +
+            '<td class="text-dim" style="font-size:12.5px">' + UI.dateShort(r.closesAt) + '</td>' +
+            '<td class="num nowrap">' + actions + '</td>' +
+          '</tr>';
+        }).join('') : '<tr><td colspan="7"><div class="empty"><p>No rounds.</p></div></td></tr>';
+      }
+
+      /* ---------------------------------------------------- audit */
+      function renderAudit() {
+        var log = Store.auditLog();
+        document.getElementById('auditBody').innerHTML = log.length ? log.map(function (l) {
+          return '<tr><td class="mono" style="font-size:12px">' + UI.esc(l.action) + '</td>' +
+            '<td class="text-dim" style="font-size:12.5px">' + UI.esc(l.detail) + '</td>' +
+            '<td class="text-faint" style="font-size:12px">' + UI.esc(l.by) + '</td>' +
+            '<td class="text-dim" style="font-size:12.5px">' + UI.dateShort(l.at) + '</td></tr>';
+        }).join('') : '<tr><td colspan="4"><div class="empty"><p>No admin actions logged yet.</p></div></td></tr>';
+      }
+
+      /* ---------------------------------------------------- counts + undo */
+      function renderCounts() {
+        var txs = Store.allTransactions();
+        document.getElementById('cKyc').textContent = Store.allKyc().filter(function (k) { return k.status === 'pending'; }).length;
+        document.getElementById('cDep').textContent = txs.filter(function (t) { return t.type === 'deposit' && t.status === 'pending'; }).length;
+        document.getElementById('cWd').textContent = txs.filter(function (t) { return t.type === 'withdrawal' && t.status === 'pending'; }).length;
+        document.getElementById('cUsers').textContent = Store.allUsers().length;
+        document.getElementById('cBon').textContent = Store.allBonuses().length;
+      }
+
+      function renderUndo() {
+        var stack = Store.undoStack();
+        var btn = document.getElementById('undoBtn');
+        var bar = document.getElementById('undoBar');
+        if (stack.length) {
+          btn.disabled = false;
+          bar.classList.remove('hidden');
+          document.getElementById('undoText').textContent = 'Last action: ' + stack[stack.length - 1].label;
+        } else {
+          btn.disabled = true;
+          bar.classList.add('hidden');
+        }
+      }
+
+      function renderAll() {
+        renderOverview(); renderKyc();
+        renderTxTable('deposit', 'depBody');
+        renderTxTable('withdrawal', 'wdBody');
+        renderUsers(); renderBalances(); renderBonuses(); renderPlans(); renderRounds(); renderAudit();
+        renderCounts(); renderUndo();
+      }
+
+      function doUndo() {
+        var res = Store.undo();
+        if (!res.ok) { UI.toast(res.error, 'warn'); return; }
+        UI.toast('Undone: ' + res.label);
+        renderAll();
+      }
+
+      /* ---------------------------------------------------- panel switching */
+      document.getElementById('adminSide').addEventListener('click', function (e) {
+        var b = e.target.closest('button[data-panel]');
+        if (!b) return;
+        switchPanel(b.dataset.panel);
+      });
+      function switchPanel(name) {
+        document.querySelectorAll('#adminSide button').forEach(function (x) {
+          x.classList.toggle('active', x.dataset.panel === name);
+        });
+        document.querySelectorAll('#adminPanel .panel').forEach(function (p) {
+          p.classList.toggle('active', p.dataset.panel === name);
+        });
+      }
+      document.getElementById('pendingQueue').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-goto]');
+        if (b) switchPanel(b.dataset.goto);
+      });
+
+      /* ---------------------------------------------------- KYC actions */
+      document.getElementById('kycBody').addEventListener('click', function (e) {
+        var ok = e.target.closest('[data-kyc-ok]');
+        var no = e.target.closest('[data-kyc-no]');
+        if (ok) {
+          Store.reviewKyc(ok.dataset.kycOk, 'approved', '');
+          UI.toast('KYC approved.');
+          renderAll();
+        } else if (no) {
+          UI.modal({
+            title: 'Reject KYC submission',
+            body: '<div class="field"><label for="kycNote">Reason (shown to the user)</label>' +
+              '<textarea class="textarea" id="kycNote" placeholder="e.g. Document photo is unreadable"></textarea></div>',
+            confirmText: 'Reject', danger: true,
+            onConfirm: function (root) {
+              Store.reviewKyc(no.dataset.kycNo, 'rejected', root.querySelector('#kycNote').value.trim());
+              UI.toast('KYC rejected.', 'warn');
+              renderAll();
+              return true;
+            }
+          });
+        }
+      });
+
+      /* ---------------------------------------------------- tx actions */
+      function wireTx(tbodyId) {
+        document.getElementById(tbodyId).addEventListener('click', function (e) {
+          var ok = e.target.closest('[data-tx-ok]');
+          var no = e.target.closest('[data-tx-no]');
+          if (ok) {
+            var res = Store.reviewTransaction(ok.dataset.txOk, 'approved', '');
+            if (!res.ok) { UI.toast(res.error, 'err'); return; }
+            UI.toast('Request approved — balance updated.');
+            renderAll();
+          } else if (no) {
+            UI.modal({
+              title: 'Reject request',
+              body: '<div class="field"><label for="txNote">Reason (optional)</label>' +
+                '<textarea class="textarea" id="txNote" placeholder="e.g. Transaction not found on-chain"></textarea></div>',
+              confirmText: 'Reject', danger: true,
+              onConfirm: function (root) {
+                var r = Store.reviewTransaction(no.dataset.txNo, 'rejected', root.querySelector('#txNote').value.trim());
+                if (!r.ok) { UI.toast(r.error, 'err'); return false; }
+                UI.toast('Request rejected.', 'warn');
+                renderAll();
+                return true;
+              }
+            });
+          }
+        });
+      }
+      wireTx('depBody'); wireTx('wdBody');
+
+      /* ---------------------------------------------------- user actions */
+      document.getElementById('userSearch').addEventListener('input', renderUsers);
+      document.getElementById('usersBody').addEventListener('click', function (e) {
+        var sus = e.target.closest('[data-user-suspend]');
+        var act = e.target.closest('[data-user-activate]');
+        var del = e.target.closest('[data-user-del]');
+        if (sus) { Store.setUserStatus(sus.dataset.userSuspend, 'suspended'); UI.toast('User suspended.', 'warn'); renderAll(); }
+        else if (act) { Store.setUserStatus(act.dataset.userActivate, 'active'); UI.toast('User activated.'); renderAll(); }
+        else if (del) {
+          UI.modal({
+            title: 'Delete user',
+            body: '<p class="text-dim" style="font-size:13.5px">This removes the account from the demo database. You can undo it afterwards.</p>',
+            confirmText: 'Delete user', danger: true,
+            onConfirm: function () {
+              var r = Store.deleteUser(del.dataset.userDel);
+              if (!r.ok) { UI.toast(r.error, 'err'); return false; }
+              UI.toast('User deleted.', 'warn');
+              renderAll();
+              return true;
+            }
+          });
+        }
+      });
+
+      /* ---------------------------------------------------- balance adjust */
+      document.getElementById('balSubmit').addEventListener('click', function () {
+        var err = document.getElementById('balError');
+        err.textContent = '';
+        var userId = document.getElementById('balUser').value;
+        var amt = Number(document.getElementById('balAmount').value);
+        var reason = document.getElementById('balReason').value.trim();
+        if (!amt) { err.textContent = 'Enter a non-zero amount.'; return; }
+        var res = Store.adjustBalance(userId, amt, reason);
+        if (!res.ok) { err.textContent = res.error; return; }
+        UI.toast((amt > 0 ? 'Credited ' : 'Debited ') + UI.money(Math.abs(amt)));
+        document.getElementById('balAmount').value = '';
+        document.getElementById('balReason').value = '';
+        renderAll();
+      });
+
+      /* ---------------------------------------------------- bonus CRUD */
+      function bonusModal(bonus) {
+        var b = bonus || { title: '', description: '', amount: 0, wager: 0, code: '', active: true };
+        UI.modal({
+          title: bonus ? 'Edit bonus' : 'New bonus',
+          body:
+            '<div class="field"><label for="bTitle">Title</label><input class="input" id="bTitle" value="' + UI.esc(b.title) + '" /></div>' +
+            '<div class="field"><label for="bDesc">Description</label><textarea class="textarea" id="bDesc">' + UI.esc(b.description) + '</textarea></div>' +
+            '<div class="form-grid">' +
+              '<div class="field"><label for="bAmount">Amount (USD)</label><input class="input" id="bAmount" type="number" step="0.01" value="' + b.amount + '" /></div>' +
+              '<div class="field"><label for="bWager">Wagering (×)</label><input class="input" id="bWager" type="number" step="1" value="' + b.wager + '" /></div>' +
+            '</div>' +
+            '<div class="field"><label for="bCode">Promo code</label><input class="input" id="bCode" value="' + UI.esc(b.code) + '" /></div>' +
+            '<div class="field"><label><input type="checkbox" id="bActive" ' + (b.active ? 'checked' : '') + ' /> Active</label></div>' +
+            '<div class="error-text" id="bErr"></div>',
+          confirmText: bonus ? 'Save changes' : 'Create bonus',
+          onConfirm: function (root) {
+            var data = {
+              id: bonus ? bonus.id : undefined,
+              title: root.querySelector('#bTitle').value.trim(),
+              description: root.querySelector('#bDesc').value.trim(),
+              amount: Number(root.querySelector('#bAmount').value),
+              wager: Number(root.querySelector('#bWager').value),
+              code: root.querySelector('#bCode').value.trim(),
+              active: root.querySelector('#bActive').checked
+            };
+            if (!data.title) { root.querySelector('#bErr').textContent = 'Title is required.'; return false; }
+            Store.saveBonus(data);
+            UI.toast(bonus ? 'Bonus updated.' : 'Bonus created.');
+            renderAll();
+            return true;
+          }
+        });
+      }
+      document.getElementById('newBonusBtn').addEventListener('click', function () { bonusModal(null); });
+      document.getElementById('bonusBody').addEventListener('click', function (e) {
+        var ed = e.target.closest('[data-bonus-edit]');
+        var tg = e.target.closest('[data-bonus-toggle]');
+        var dl = e.target.closest('[data-bonus-del]');
+        if (ed) {
+          var b = Store.allBonuses().find(function (x) { return x.id === ed.dataset.bonusEdit; });
+          if (b) bonusModal(b);
+        } else if (tg) {
+          Store.toggleBonus(tg.dataset.bonusToggle);
+          UI.toast('Bonus status changed.');
+          renderAll();
+        } else if (dl) {
+          UI.modal({
+            title: 'Delete bonus', body: '<p class="text-dim" style="font-size:13.5px">This removes the offer from the bonuses page. Undo is available.</p>',
+            confirmText: 'Delete', danger: true,
+            onConfirm: function () {
+              var r = Store.deleteBonus(dl.dataset.bonusDel);
+              if (!r.ok) { UI.toast(r.error, 'err'); return false; }
+              UI.toast('Bonus deleted.', 'warn'); renderAll(); return true;
+            }
+          });
+        }
+      });
+
+      /* ---------------------------------------------------- plan CRUD */
+      function planModal(plan) {
+        var p = plan || { name: '', symbol: 'BTC', apy: 5, days: 30, min: 50, max: 100000, active: true };
+        var symbols = ['BTC', 'ETH', 'SOL', 'USDT', 'USDC', 'BNB', 'XRP', 'ADA', 'DOGE', 'AVAX', 'LINK', 'DOT'];
+        UI.modal({
+          title: plan ? 'Edit staking plan' : 'New staking plan',
+          body:
+            '<div class="field"><label for="pName">Plan name</label><input class="input" id="pName" value="' + UI.esc(p.name) + '" /></div>' +
+            '<div class="form-grid">' +
+              '<div class="field"><label for="pSymbol">Asset</label><select class="select" id="pSymbol">' +
+                symbols.map(function (s) { return '<option ' + (s === p.symbol ? 'selected' : '') + '>' + s + '</option>'; }).join('') +
+              '</select></div>' +
+              '<div class="field"><label for="pApy">APY (%)</label><input class="input" id="pApy" type="number" step="0.1" value="' + p.apy + '" /></div>' +
+              '<div class="field"><label for="pDays">Lock days</label><input class="input" id="pDays" type="number" step="1" value="' + p.days + '" /></div>' +
+              '<div class="field"><label for="pMin">Minimum (USD)</label><input class="input" id="pMin" type="number" step="1" value="' + p.min + '" /></div>' +
+              '<div class="field"><label for="pMax">Maximum (USD)</label><input class="input" id="pMax" type="number" step="1" value="' + p.max + '" /></div>' +
+            '</div>' +
+            '<div class="field"><label><input type="checkbox" id="pActive" ' + (p.active ? 'checked' : '') + ' /> Active</label></div>' +
+            '<div class="error-text" id="pErr"></div>',
+          confirmText: plan ? 'Save changes' : 'Create plan',
+          onConfirm: function (root) {
+            var data = {
+              id: plan ? plan.id : undefined,
+              name: root.querySelector('#pName').value.trim(),
+              symbol: root.querySelector('#pSymbol').value,
+              apy: Number(root.querySelector('#pApy').value),
+              days: Number(root.querySelector('#pDays').value),
+              min: Number(root.querySelector('#pMin').value),
+              max: Number(root.querySelector('#pMax').value),
+              active: root.querySelector('#pActive').checked
+            };
+            if (!data.name) { root.querySelector('#pErr').textContent = 'Plan name is required.'; return false; }
+            Store.savePlan(data);
+            UI.toast(plan ? 'Plan updated.' : 'Plan created.');
+            renderAll();
+            return true;
+          }
+        });
+      }
+      document.getElementById('newPlanBtn').addEventListener('click', function () { planModal(null); });
+      document.getElementById('planBody').addEventListener('click', function (e) {
+        var ed = e.target.closest('[data-plan-edit]');
+        var dl = e.target.closest('[data-plan-del]');
+        if (ed) {
+          var p = Store.allStakingPlans().find(function (x) { return x.id === ed.dataset.planEdit; });
+          if (p) planModal(p);
+        } else if (dl) {
+          UI.modal({
+            title: 'Delete staking plan', body: '<p class="text-dim" style="font-size:13.5px">Existing stakes keep their terms. Undo is available.</p>',
+            confirmText: 'Delete', danger: true,
+            onConfirm: function () {
+              var r = Store.deletePlan(dl.dataset.planDel);
+              if (!r.ok) { UI.toast(r.error, 'err'); return false; }
+              UI.toast('Plan deleted.', 'warn'); renderAll(); return true;
+            }
+          });
+        }
+      });
+
+      /* ---------------------------------------------------- round CRUD */
+      document.getElementById('newRoundBtn').addEventListener('click', function () {
+        var symbols = ['BTC', 'ETH', 'SOL', 'BNB', 'XRP', 'ADA', 'DOGE', 'AVAX', 'LINK', 'DOT'];
+        UI.modal({
+          title: 'New prediction round',
+          body:
+            '<div class="form-grid">' +
+              '<div class="field"><label for="rSymbol">Asset</label><select class="select" id="rSymbol">' +
+                symbols.map(function (s) { return '<option>' + s + '</option>'; }).join('') + '</select></div>' +
+              '<div class="field"><label for="rRound">Round number</label><input class="input" id="rRound" type="number" value="' + (Math.floor(Math.random() * 900) + 100) + '" /></div>' +
+              '<div class="field"><label for="rStart">Start price</label><input class="input" id="rStart" type="number" step="0.0001" value="0" /></div>' +
+              '<div class="field"><label for="rMins">Duration (minutes)</label><input class="input" id="rMins" type="number" value="15" /></div>' +
+            '</div>' +
+            '<div class="error-text" id="rErr"></div>',
+          confirmText: 'Create round',
+          onOpen: function (root) {
+            root.querySelector('#rSymbol').addEventListener('change', function () {
+              var m = Store.market(this.value);
+              if (m) root.querySelector('#rStart').value = m.price;
+            });
+            var m0 = Store.market('BTC');
+            if (m0) root.querySelector('#rStart').value = m0.price;
+          },
+          onConfirm: function (root) {
+            var mins = Number(root.querySelector('#rMins').value) || 15;
+            var data = {
+              symbol: root.querySelector('#rSymbol').value,
+              round: Number(root.querySelector('#rRound').value),
+              startPrice: Number(root.querySelector('#rStart').value),
+              closesAt: new Date(Date.now() + mins * 60000).toISOString()
+            };
+            if (!data.startPrice) { root.querySelector('#rErr').textContent = 'Enter a start price.'; return false; }
+            Store.saveRound(data);
+            UI.toast('Round created.');
+            renderAll();
+            return true;
+          }
+        });
+      });
+      document.getElementById('roundBody').addEventListener('click', function (e) {
+        var rs = e.target.closest('[data-round-resolve]');
+        var dl = e.target.closest('[data-round-del]');
+        if (rs) {
+          var r = Store.rounds().find(function (x) { return x.id === rs.dataset.roundResolve; });
+          if (!r) return;
+          UI.modal({
+            title: 'Resolve round #' + r.round,
+            body: '<p class="text-dim" style="font-size:13px">Enter the closing price. Winners are paid 2× their stake automatically.</p>' +
+              '<div class="row-between" style="font-size:13px"><span class="text-faint">Start price</span><span class="mono">' + UI.price(r.startPrice) + '</span></div>' +
+              '<div class="field"><label for="rEnd">Closing price</label><input class="input" id="rEnd" type="number" step="0.0001" value="' + r.startPrice + '" /></div>',
+            confirmText: 'Resolve round',
+            onConfirm: function (root) {
+              var end = Number(root.querySelector('#rEnd').value);
+              if (!end) { UI.toast('Enter a closing price.', 'err'); return false; }
+              Store.resolveRound(r.id, end);
+              UI.toast('Round resolved and payouts settled.');
+              renderAll();
+              return true;
+            }
+          });
+        } else if (dl) {
+          UI.modal({
+            title: 'Delete round', body: '<p class="text-dim" style="font-size:13.5px">This removes the round. Undo is available.</p>',
+            confirmText: 'Delete', danger: true,
+            onConfirm: function () {
+              var r = Store.deleteRound(dl.dataset.roundDel);
+              if (!r.ok) { UI.toast(r.error, 'err'); return false; }
+              UI.toast('Round deleted.', 'warn'); renderAll(); return true;
+            }
+          });
+        }
+      });
+
+      /* ---------------------------------------------------- undo + reset */
+      document.getElementById('undoBtn').addEventListener('click', doUndo);
+      document.getElementById('undoBarBtn').addEventListener('click', doUndo);
+      document.getElementById('resetBtn').addEventListener('click', function () {
+        UI.modal({
+          title: 'Reset demo data',
+          body: '<p class="text-dim" style="font-size:13.5px">This restores the original seed data and clears all changes, including your session. You will be signed out.</p>',
+          confirmText: 'Reset everything', danger: true,
+          onConfirm: function () {
+            Store.reset();
+            location.href = 'auth.html';
+            return true;
+          }
+        });
+      });
+
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
