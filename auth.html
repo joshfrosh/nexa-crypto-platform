@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in — Nexa</title>
+  <meta name="description" content="Sign in or create your Nexa account with Gmail, iCloud, email or phone." />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="nav" id="nav"></header>
+
+  <main id="main">
+    <div class="auth-wrap">
+      <!-- ================================================== aside -->
+      <aside class="auth-aside">
+        <div class="brand mb-3"><span class="brand-mark">N</span><span>Nexa</span></div>
+        <h2 style="font-size:30px;letter-spacing:-.03em;line-height:1.15">One account for trading, staking and predictions.</h2>
+        <p class="text-dim mt-2" style="font-size:15px;line-height:1.65;max-width:38ch">
+          Sign in to access your wallet, claim bonuses and track every position in one place.
+        </p>
+        <ul class="stack mt-3" style="gap:14px">
+          <li class="row"><span class="badge badge-up">✓</span><span class="text-dim" style="font-size:14px">12 spot markets with instant fills</span></li>
+          <li class="row"><span class="badge badge-up">✓</span><span class="text-dim" style="font-size:14px">Staking vaults up to 12.5% APY</span></li>
+          <li class="row"><span class="badge badge-up">✓</span><span class="text-dim" style="font-size:14px">15-minute prediction rounds</span></li>
+          <li class="row"><span class="badge badge-up">✓</span><span class="text-dim" style="font-size:14px">Admin-approved deposits &amp; withdrawals</span></li>
+        </ul>
+        <div class="card mt-3" style="background:var(--surface);border-color:var(--border)">
+          <div class="stat-label mb-1">Demo credentials</div>
+          <div class="mono" style="font-size:12.5px;line-height:1.8">
+            demo@nexa.app / demo1234<br>
+            <span class="text-faint">Admin: joshuajoshfrosh@gmail.com / admin1234</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ================================================== main -->
+      <div class="auth-main">
+        <div class="auth-card">
+          <!-- sign in -->
+          <div id="signinView">
+            <h1>Welcome back</h1>
+            <p class="sub">Sign in to your Nexa account.</p>
+
+            <div class="oauth-grid">
+              <button class="oauth-btn" data-oauth="gmail">
+                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 11v3.6h5.1c-.2 1.3-1.6 3.9-5.1 3.9-3.1 0-5.6-2.5-5.6-5.6S8.9 7.3 12 7.3c1.7 0 2.9.7 3.6 1.4l2.5-2.4C16.5 4.8 14.5 4 12 4 7.6 4 4 7.6 4 12s3.6 8 8 8c4.6 0 7.7-3.2 7.7-7.8 0-.5-.1-.9-.2-1.2H12z"/></svg>
+                Continue with Gmail
+              </button>
+              <button class="oauth-btn" data-oauth="icloud">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 12.54c-.02-2.2 1.8-3.26 1.88-3.31-1.02-1.5-2.62-1.7-3.19-1.72-1.36-.14-2.65.8-3.34.8-.69 0-1.75-.78-2.88-.76-1.48.02-2.85.86-3.61 2.18-1.54 2.67-.39 6.62 1.11 8.79.73 1.06 1.6 2.25 2.75 2.21 1.1-.04 1.52-.71 2.85-.71 1.33 0 1.7.71 2.87.69 1.19-.02 1.94-1.08 2.66-2.15.84-1.23 1.19-2.42 1.21-2.48-.03-.01-2.32-.89-2.34-3.54zM14.9 5.9c.61-.74 1.02-1.77.91-2.8-.88.04-1.94.59-2.57 1.32-.56.65-1.06 1.7-.93 2.7.98.08 1.98-.5 2.59-1.22z"/></svg>
+                Continue with iCloud
+              </button>
+            </div>
+
+            <div class="divider">or sign in with</div>
+
+            <div class="segmented mb-2" id="methodToggle" style="width:100%">
+              <button class="active" data-method="email" style="flex:1">Email</button>
+              <button data-method="phone" style="flex:1">Phone</button>
+            </div>
+
+            <form id="signinForm" class="stack" style="gap:14px" novalidate>
+              <div id="emailField" class="field">
+                <label for="siEmail">Email address</label>
+                <input class="input" id="siEmail" type="email" placeholder="you@example.com" autocomplete="email" />
+              </div>
+              <div id="phoneField" class="field hidden">
+                <label for="siPhone">Phone number</label>
+                <div class="phone-input">
+                  <div class="country-select-wrap" id="siCountry"></div>
+                  <input class="input" id="siPhone" type="tel" placeholder="555 0100" autocomplete="tel" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="siPassword">Password</label>
+                <input class="input" id="siPassword" type="password" placeholder="••••••••" autocomplete="current-password" />
+              </div>
+              <div class="error-text" id="siError"></div>
+              <button class="btn btn-primary btn-lg btn-block" type="submit">Sign in</button>
+            </form>
+
+            <p class="auth-switch">New to Nexa? <a id="toSignup">Create an account</a></p>
+          </div>
+
+          <!-- sign up -->
+          <div id="signupView" class="hidden">
+            <h1>Create your account</h1>
+            <p class="sub">Start trading in under a minute.</p>
+
+            <div class="oauth-grid">
+              <button class="oauth-btn" data-oauth="gmail">
+                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 11v3.6h5.1c-.2 1.3-1.6 3.9-5.1 3.9-3.1 0-5.6-2.5-5.6-5.6S8.9 7.3 12 7.3c1.7 0 2.9.7 3.6 1.4l2.5-2.4C16.5 4.8 14.5 4 12 4 7.6 4 4 7.6 4 12s3.6 8 8 8c4.6 0 7.7-3.2 7.7-7.8 0-.5-.1-.9-.2-1.2H12z"/></svg>
+                Sign up with Gmail
+              </button>
+              <button class="oauth-btn" data-oauth="icloud">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 12.54c-.02-2.2 1.8-3.26 1.88-3.31-1.02-1.5-2.62-1.7-3.19-1.72-1.36-.14-2.65.8-3.34.8-.69 0-1.75-.78-2.88-.76-1.48.02-2.85.86-3.61 2.18-1.54 2.67-.39 6.62 1.11 8.79.73 1.06 1.6 2.25 2.75 2.21 1.1-.04 1.52-.71 2.85-.71 1.33 0 1.7.71 2.87.69 1.19-.02 1.94-1.08 2.66-2.15.84-1.23 1.19-2.42 1.21-2.48-.03-.01-2.32-.89-2.34-3.54zM14.9 5.9c.61-.74 1.02-1.77.91-2.8-.88.04-1.94.59-2.57 1.32-.56.65-1.06 1.7-.93 2.7.98.08 1.98-.5 2.59-1.22z"/></svg>
+                Sign up with iCloud
+              </button>
+            </div>
+
+            <div class="divider">or sign up with</div>
+
+            <div class="segmented mb-2" id="signupMethodToggle" style="width:100%">
+              <button class="active" data-method="email" style="flex:1">Email</button>
+              <button data-method="phone" style="flex:1">Phone</button>
+            </div>
+
+            <form id="signupForm" class="stack" style="gap:14px" novalidate>
+              <div class="field">
+                <label for="suName">Full name</label>
+                <input class="input" id="suName" placeholder="Jane Doe" autocomplete="name" />
+              </div>
+              <div id="suEmailField" class="field">
+                <label for="suEmail">Email address</label>
+                <input class="input" id="suEmail" type="email" placeholder="you@example.com" autocomplete="email" />
+              </div>
+              <div id="suPhoneField" class="field hidden">
+                <label for="suPhone">Phone number</label>
+                <div class="phone-input">
+                  <div class="country-select-wrap" id="suCountry"></div>
+                  <input class="input" id="suPhone" type="tel" placeholder="555 0100" autocomplete="tel" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="suPassword">Password</label>
+                <input class="input" id="suPassword" type="password" placeholder="At least 8 characters" autocomplete="new-password" />
+              </div>
+              <div class="error-text" id="suError"></div>
+              <button class="btn btn-primary btn-lg btn-block" type="submit">Create account</button>
+            </form>
+
+            <p class="auth-switch">Already have an account? <a id="toSignin">Sign in</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/countries.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var next = params.get('next') || 'index.html';
+
+      var signinView = document.getElementById('signinView');
+      var signupView = document.getElementById('signupView');
+
+      function showSignup() {
+        signinView.classList.add('hidden');
+        signupView.classList.remove('hidden');
+        history.replaceState(null, '', '#signup');
+      }
+      function showSignin() {
+        signupView.classList.add('hidden');
+        signinView.classList.remove('hidden');
+        history.replaceState(null, '', location.pathname + (next !== 'index.html' ? '?next=' + encodeURIComponent(next) : ''));
+      }
+
+      document.getElementById('toSignup').addEventListener('click', showSignup);
+      document.getElementById('toSignin').addEventListener('click', showSignin);
+      if (location.hash === '#signup') showSignup();
+
+      /* country pickers */
+      var siPicker = UI.countryPicker(document.getElementById('siCountry'));
+      var suPicker = UI.countryPicker(document.getElementById('suCountry'));
+
+      /* method toggles */
+      function wireToggle(toggleId, emailId, phoneId) {
+        var toggle = document.getElementById(toggleId);
+        toggle.addEventListener('click', function (e) {
+          var b = e.target.closest('button[data-method]');
+          if (!b) return;
+          toggle.querySelectorAll('button').forEach(function (x) { x.classList.remove('active'); });
+          b.classList.add('active');
+          var isPhone = b.dataset.method === 'phone';
+          document.getElementById(emailId).classList.toggle('hidden', isPhone);
+          document.getElementById(phoneId).classList.toggle('hidden', !isPhone);
+        });
+      }
+      wireToggle('methodToggle', 'emailField', 'phoneField');
+      wireToggle('signupMethodToggle', 'suEmailField', 'suPhoneField');
+
+      function go() {
+        UI.toast('Signed in successfully.');
+        setTimeout(function () { location.href = next; }, 350);
+      }
+
+      /* OAuth demo buttons — create/sign in a demo social account */
+      document.querySelectorAll('[data-oauth]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var provider = btn.dataset.oauth;
+          var email = provider === 'gmail' ? 'gmail.user@nexa.app' : 'icloud.user@nexa.app';
+          var existing = Store.get().users.find(function (u) { return u.email === email; });
+          if (existing) {
+            Store.login(email, 'social1234');
+          } else {
+            Store.signup({ name: provider === 'gmail' ? 'Gmail User' : 'iCloud User', email: email, password: 'social1234' });
+          }
+          go();
+        });
+      });
+
+      /* sign in */
+      document.getElementById('signinForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var err = document.getElementById('siError');
+        err.textContent = '';
+        var isPhone = !document.getElementById('phoneField').classList.contains('hidden');
+        var email, password = document.getElementById('siPassword').value;
+
+        if (isPhone) {
+          var c = siPicker.get();
+          var num = document.getElementById('siPhone').value.trim();
+          if (!num) { err.textContent = 'Enter your phone number.'; return; }
+          email = '+' + c.dial + num.replace(/\D/g, '') + '@phone.nexa.app';
+        } else {
+          email = document.getElementById('siEmail').value.trim();
+          if (!email) { err.textContent = 'Enter your email address.'; return; }
+        }
+        if (!password) { err.textContent = 'Enter your password.'; return; }
+
+        var res = Store.login(email, password);
+        if (!res.ok) { err.textContent = res.error; return; }
+        go();
+      });
+
+      /* sign up */
+      document.getElementById('signupForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var err = document.getElementById('suError');
+        err.textContent = '';
+        var isPhone = !document.getElementById('suPhoneField').classList.contains('hidden');
+        var name = document.getElementById('suName').value.trim();
+        var password = document.getElementById('suPassword').value;
+        var email, phone = '', country = '';
+
+        if (isPhone) {
+          var c = suPicker.get();
+          var num = document.getElementById('suPhone').value.trim();
+          if (!num) { err.textContent = 'Enter your phone number.'; return; }
+          phone = '+' + c.dial + ' ' + num;
+          country = c.name;
+          email = '+' + c.dial + num.replace(/\D/g, '') + '@phone.nexa.app';
+        } else {
+          email = document.getElementById('suEmail').value.trim();
+          if (!email) { err.textContent = 'Enter your email address.'; return; }
+        }
+        if (!name) { err.textContent = 'Enter your full name.'; return; }
+        if (password.length < 8) { err.textContent = 'Password must be at least 8 characters.'; return; }
+
+        var res = Store.signup({ name: name, email: email, phone: phone, country: country, password: password });
+        if (!res.ok) { err.textContent = res.error; return; }
+        go();
+      });
+    })();
+  </script>
+</body>
+</html>
