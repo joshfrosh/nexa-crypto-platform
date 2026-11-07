@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wallet — Nexa</title>
+  <meta name="description" content="Request deposits and withdrawals, and review your full transaction history." />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="nav" id="nav"></header>
+
+  <main id="main" class="page">
+    <div class="container">
+      <div class="page-head">
+        <h1>Wallet</h1>
+        <p>Deposits and withdrawals are requests — the admin approves or rejects each one.</p>
+      </div>
+
+      <div class="grid g4 mt-3" id="walletStats"></div>
+
+      <div class="wallet-actions mt-3">
+        <button class="wallet-btn dep" id="btnDeposit">
+          <span class="ico">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>
+          </span>
+          <strong>Deposit</strong>
+          <small>Request a deposit in BTC, ETH, USDT, USDC, SOL or BNB</small>
+        </button>
+        <button class="wallet-btn wd" id="btnWithdraw">
+          <span class="ico">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+          </span>
+          <strong>Withdraw</strong>
+          <small>Request a withdrawal to an external address</small>
+        </button>
+      </div>
+
+      <div class="card-head mt-3">
+        <div>
+          <div class="card-title" style="font-size:17px">Transaction history</div>
+          <div class="card-sub">All deposits, withdrawals and admin adjustments</div>
+        </div>
+        <div class="row" style="gap:6px" id="txFilter">
+          <button class="btn btn-sm btn-primary" data-filter="all">All</button>
+          <button class="btn btn-sm btn-outline" data-filter="deposit">Deposits</button>
+          <button class="btn btn-sm btn-outline" data-filter="withdrawal">Withdrawals</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr><th>Type</th><th>Asset</th><th class="num">Amount</th><th>Network</th><th>Status</th><th>Date</th><th>Note</th></tr>
+            </thead>
+            <tbody id="txBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/countries.js"></script>
+  <script src="assets/js/store.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    (function () {
+      var user = UI.requireAuth();
+      if (!user) return;
+
+      var filter = 'all';
+
+      function renderStats() {
+        var u = Store.currentUser();
+        var txs = Store.myTransactions(u.id);
+        var pending = txs.filter(function (t) { return t.status === 'pending'; });
+        var dep = txs.filter(function (t) { return t.type === 'deposit' && t.status === 'approved'; })
+                     .reduce(function (a, t) { return a + t.amount; }, 0);
+        var wd = txs.filter(function (t) { return t.type === 'withdrawal' && t.status === 'approved'; })
+                    .reduce(function (a, t) { return a + t.amount; }, 0);
+
+        document.getElementById('walletStats').innerHTML =
+          '<div class="card"><div class="stat"><span class="stat-label">Available balance</span>' +
+            '<span class="stat-value sm">' + UI.money(u.balance) + '</span></div></div>' +
+          '<div class="card"><div class="stat"><span class="stat-label">Pending requests</span>' +
+            '<span class="stat-value sm text-warn">' + pending.length + '</span></div></div>' +
+          '<div class="card"><div class="stat"><span class="stat-label">Total deposited</span>' +
+            '<span class="stat-value sm text-up">' + UI.money(dep) + '</span></div></div>' +
+          '<div class="card"><div class="stat"><span class="stat-label">Total withdrawn</span>' +
+            '<span class="stat-value sm">' + UI.money(wd) + '</span></div></div>';
+      }
+
+      function statusBadge(s) {
+        var map = { pending: 'badge-warn', approved: 'badge-up', rejected: 'badge-down' };
+        return '<span class="badge ' + (map[s] || 'badge') + '">' + s + '</span>';
+      }
+
+      function renderTx() {
+        var u = Store.currentUser();
+        var txs = Store.myTransactions(u.id).filter(function (t) {
+          if (filter === 'all') return true;
+          return t.type === filter;
+        });
+        if (!txs.length) {
+          document.getElementById('txBody').innerHTML =
+            '<tr><td colspan="7"><div class="empty"><div class="ico">≡</div><p>No transactions to show.</p></div></td></tr>';
+          return;
+        }
+        document.getElementById('txBody').innerHTML = txs.map(function (t) {
+          var sign = t.type === 'withdrawal' || t.type === 'debit' ? '-' : '+';
+          var cls = t.type === 'withdrawal' || t.type === 'debit' ? 'text-down' : 'text-up';
+          return '<tr>' +
+            '<td style="text-transform:capitalize;font-weight:600">' + t.type + '</td>' +
+            '<td>' + t.asset + '</td>' +
+            '<td class="num ' + cls + '">' + sign + UI.num(t.amount, t.asset === 'USD' ? 2 : 6) + '</td>' +
+            '<td class="text-dim" style="font-size:12.5px">' + UI.esc(t.network || '—') + '</td>' +
+            '<td>' + statusBadge(t.status) + '</td>' +
+            '<td class="text-dim" style="font-size:12.5px">' + UI.dateShort(t.createdAt) + '</td>' +
+            '<td class="text-faint" style="font-size:12px">' + UI.esc(t.note || '—') + '</td>' +
+          '</tr>';
+        }).join('');
+      }
+
+      function renderAll() { renderStats(); renderTx(); }
+
+      function assetOptions() {
+        return Object.keys(CFG_NETWORKS()).map(function (a) {
+          return '<option value="' + a + '">' + a + '</option>';
+        }).join('');
+      }
+      function CFG_NETWORKS() { return window.APP_CONFIG.NETWORKS; }
+
+      function networkOptions(asset) {
+        var nets = CFG_NETWORKS()[asset] || [];
+        return nets.map(function (n) { return '<option value="' + n + '">' + n + '</option>'; }).join('');
+      }
+
+      function openDeposit() {
+        var u = Store.currentUser();
+        UI.modal({
+          title: 'Request a deposit',
+          body:
+            '<p class="text-dim" style="font-size:13px">Submit a deposit request. The admin reviews it and credits your balance on approval.</p>' +
+            '<div class="field"><label for="depAsset">Asset</label>' +
+              '<select class="select" id="depAsset">' + assetOptions() + '</select></div>' +
+            '<div class="field"><label for="depNet">Network</label>' +
+              '<select class="select" id="depNet">' + networkOptions('BTC') + '</select></div>' +
+            '<div class="field"><label for="depAmt">Amount (USD value)</label>' +
+              '<input class="input" id="depAmt" type="number" min="' + window.APP_CONFIG.MIN_DEPOSIT + '" step="0.01" placeholder="' + window.APP_CONFIG.MIN_DEPOSIT + '" />' +
+              '<div class="hint">Minimum ' + UI.money(window.APP_CONFIG.MIN_DEPOSIT) + '</div></div>' +
+            '<div class="field"><label for="depAddr">Your sending address (optional)</label>' +
+              '<input class="input" id="depAddr" placeholder="Wallet address you will send from" /></div>' +
+            '<div class="error-text" id="depErr"></div>',
+          confirmText: 'Submit request',
+          onOpen: function (root) {
+            root.querySelector('#depAsset').addEventListener('change', function () {
+              root.querySelector('#depNet').innerHTML = networkOptions(this.value);
+            });
+          },
+          onConfirm: function (root) {
+            var asset = root.querySelector('#depAsset').value;
+            var net = root.querySelector('#depNet').value;
+            var amt = Number(root.querySelector('#depAmt').value);
+            var addr = root.querySelector('#depAddr').value.trim();
+            var res = Store.requestDeposit(asset, net, amt, addr);
+            if (!res.ok) { root.querySelector('#depErr').textContent = res.error; return false; }
+            UI.toast('Deposit request submitted — awaiting admin approval.');
+            renderAll();
+            return true;
+          }
+        });
+      }
+
+      function openWithdraw() {
+        var u = Store.currentUser();
+        UI.modal({
+          title: 'Request a withdrawal',
+          body:
+            '<p class="text-dim" style="font-size:13px">Available: <strong class="mono">' + UI.money(u.balance) + '</strong>. ' +
+            'The admin reviews each request before funds are released.</p>' +
+            '<div class="field"><label for="wdAsset">Asset</label>' +
+              '<select class="select" id="wdAsset">' + assetOptions() + '</select></div>' +
+            '<div class="field"><label for="wdNet">Network</label>' +
+              '<select class="select" id="wdNet">' + networkOptions('BTC') + '</select></div>' +
+            '<div class="field"><label for="wdAmt">Amount (USD value)</label>' +
+              '<input class="input" id="wdAmt" type="number" min="' + window.APP_CONFIG.MIN_WITHDRAWAL + '" step="0.01" placeholder="' + window.APP_CONFIG.MIN_WITHDRAWAL + '" />' +
+              '<div class="hint">Minimum ' + UI.money(window.APP_CONFIG.MIN_WITHDRAWAL) + '</div></div>' +
+            '<div class="field"><label for="wdAddr">Destination address</label>' +
+              '<input class="input" id="wdAddr" placeholder="External wallet address" /></div>' +
+            '<div class="error-text" id="wdErr"></div>',
+          confirmText: 'Submit request',
+          onOpen: function (root) {
+            root.querySelector('#wdAsset').addEventListener('change', function () {
+              root.querySelector('#wdNet').innerHTML = networkOptions(this.value);
+            });
+          },
+          onConfirm: function (root) {
+            var asset = root.querySelector('#wdAsset').value;
+            var net = root.querySelector('#wdNet').value;
+            var amt = Number(root.querySelector('#wdAmt').value);
+            var addr = root.querySelector('#wdAddr').value.trim();
+            var res = Store.requestWithdrawal(asset, net, amt, addr);
+            if (!res.ok) { root.querySelector('#wdErr').textContent = res.error; return false; }
+            UI.toast('Withdrawal request submitted — awaiting admin approval.');
+            renderAll();
+            return true;
+          }
+        });
+      }
+
+      document.getElementById('btnDeposit').addEventListener('click', openDeposit);
+      document.getElementById('btnWithdraw').addEventListener('click', openWithdraw);
+
+      document.getElementById('txFilter').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-filter]');
+        if (!b) return;
+        filter = b.dataset.filter;
+        this.querySelectorAll('button').forEach(function (x) { x.classList.remove('btn-primary'); x.classList.add('btn-outline'); });
+        b.classList.remove('btn-outline'); b.classList.add('btn-primary');
+        renderTx();
+      });
+
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
