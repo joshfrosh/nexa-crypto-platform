@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bonuses — Nexa</title>
-  <meta name="description" content="Claim welcome credits, deposit matches and seasonal boosts." />
+  <title>Bonuses &amp; Tasks — Safu Traders</title>
+  <meta name="description" content="Complete tasks to unlock bonuses — verify your account, trade, stake and more." />
   <link rel="stylesheet" href="assets/css/styles.css" />
 </head>
 <body>
@@ -14,16 +14,27 @@
   <main id="main" class="page">
     <div class="container">
       <div class="page-head">
-        <h1>Bonuses</h1>
-        <p>Claim available offers. Each bonus can be claimed once per account.</p>
+        <h1>Bonuses &amp; Tasks</h1>
+        <p>Bonuses are unlocked by completing tasks. Finish the required tasks on an offer, then claim it.</p>
       </div>
 
       <div class="grid g3 mt-3" id="bonusStats"></div>
 
+      <!-- ============================================ TASK CENTRE -->
+      <div class="card-head mt-3">
+        <div>
+          <div class="card-title" style="font-size:17px">Your task progress</div>
+          <div class="card-sub">These tasks unlock the bonuses below</div>
+        </div>
+        <span class="badge" id="taskSummary">0 / 0 complete</span>
+      </div>
+      <div class="grid g3" id="taskGrid"></div>
+
+      <!-- ============================================ OFFERS -->
       <div class="card-head mt-3">
         <div>
           <div class="card-title" style="font-size:17px">Available offers</div>
-          <div class="card-sub">Offers are created and managed by the admin</div>
+          <div class="card-sub">Offers and their required tasks are managed by the admin</div>
         </div>
       </div>
       <div class="grid g3" id="bonusGrid"></div>
@@ -55,21 +66,58 @@
       var user = UI.requireAuth();
       if (!user) return;
 
+      var TASKS = window.APP_CONFIG.TASKS || [];
+
+      function taskLabel(id) {
+        var t = TASKS.find(function (x) { return x.id === id; });
+        return t ? t.label : id;
+      }
+      function taskLink(id) {
+        return {
+          verify: 'kyc.html',
+          profile: 'wallet.html',
+          deposit: 'wallet.html',
+          trade: 'trade.html',
+          stake: 'staking.html',
+          predict: 'predictions.html'
+        }[id] || 'index.html';
+      }
+
       function renderStats() {
         var u = Store.currentUser();
         var claims = Store.get().claims.filter(function (c) { return c.userId === u.id; });
         var total = claims.reduce(function (a, c) { return a + c.amount; }, 0);
-        var available = Store.bonuses().filter(function (b) {
-          return Store.claimedBonusIds(u.id).indexOf(b.id) === -1;
-        });
+        var st = Store.taskStatus(u.id);
+        var done = TASKS.filter(function (t) { return st[t.id]; }).length;
 
         document.getElementById('bonusStats').innerHTML =
           '<div class="card"><div class="stat"><span class="stat-label">Available balance</span>' +
             '<span class="stat-value sm">' + UI.money(u.balance) + '</span></div></div>' +
           '<div class="card"><div class="stat"><span class="stat-label">Total claimed</span>' +
             '<span class="stat-value sm text-up">' + UI.money(total) + '</span></div></div>' +
-          '<div class="card"><div class="stat"><span class="stat-label">Offers to claim</span>' +
-            '<span class="stat-value sm">' + available.length + '</span></div></div>';
+          '<div class="card"><div class="stat"><span class="stat-label">Tasks complete</span>' +
+            '<span class="stat-value sm">' + done + ' / ' + TASKS.length + '</span></div></div>';
+
+        document.getElementById('taskSummary').textContent = done + ' / ' + TASKS.length + ' complete';
+      }
+
+      function renderTasks() {
+        var u = Store.currentUser();
+        var st = Store.taskStatus(u.id);
+
+        document.getElementById('taskGrid').innerHTML = TASKS.map(function (t) {
+          var done = !!st[t.id];
+          return '<article class="card" style="' + (done ? 'border-color:rgba(0,214,143,.35)' : '') + '">' +
+            '<div class="row-between">' +
+              '<span class="badge ' + (done ? 'badge-up' : 'badge-warn') + '">' + (done ? '✓ Complete' : 'Pending') + '</span>' +
+            '</div>' +
+            '<div class="mt-2" style="font-weight:650;font-size:15px">' + UI.esc(t.label) + '</div>' +
+            '<p class="text-dim mt-1" style="font-size:13px;line-height:1.55">' + UI.esc(t.hint) + '</p>' +
+            (done
+              ? '<button class="btn btn-outline btn-block mt-2" disabled>Done</button>'
+              : '<a class="btn btn-primary btn-block mt-2" href="' + taskLink(t.id) + '">Do this task</a>') +
+          '</article>';
+        }).join('');
       }
 
       function renderBonuses() {
@@ -83,10 +131,34 @@
         }
         document.getElementById('bonusGrid').innerHTML = list.map(function (b) {
           var isClaimed = claimed.indexOf(b.id) !== -1;
+          var missing = Store.missingTasks(b, u.id);
+          var ready = !isClaimed && missing.length === 0;
+          var req = b.requires || [];
+
+          var reqHtml = req.length
+            ? '<div class="stack" style="gap:6px;margin-top:4px">' + req.map(function (id) {
+                var ok = missing.indexOf(id) === -1;
+                return '<div class="row" style="gap:8px;font-size:12.5px">' +
+                  '<span class="badge ' + (ok ? 'badge-up' : 'badge') + '" style="min-width:20px;justify-content:center">' +
+                    (ok ? '✓' : '•') + '</span>' +
+                  '<span class="' + (ok ? 'text-dim' : '') + '">' + UI.esc(taskLabel(id)) + '</span></div>';
+              }).join('') + '</div>'
+            : '<p class="text-faint" style="font-size:12.5px">No tasks required.</p>';
+
+          var btn;
+          if (isClaimed) {
+            btn = '<button class="btn btn-outline btn-block" disabled>Already claimed</button>';
+          } else if (ready) {
+            btn = '<button class="btn btn-primary btn-block" data-claim="' + b.id + '">Claim bonus</button>';
+          } else {
+            btn = '<button class="btn btn-outline btn-block" disabled>' +
+              missing.length + ' task' + (missing.length === 1 ? '' : 's') + ' remaining</button>';
+          }
+
           return '<article class="card bonus-card ' + (isClaimed ? 'claimed' : '') + '">' +
             '<div class="row-between">' +
               '<span class="badge badge-up">' + (b.type === 'credit' ? 'Account credit' : 'Bonus') + '</span>' +
-              (isClaimed ? '<span class="badge">Claimed</span>' : '') +
+              (isClaimed ? '<span class="badge">Claimed</span>' : (ready ? '<span class="badge badge-up">Unlocked</span>' : '<span class="badge badge-warn">Locked</span>')) +
             '</div>' +
             '<div class="bonus-amount">+' + UI.money(b.amount) + '</div>' +
             '<div><div style="font-weight:650;font-size:15px">' + UI.esc(b.title) + '</div>' +
@@ -95,9 +167,10 @@
             '<div class="plan-meta" style="font-size:12.5px">' +
               '<div><span>Wagering</span><span>' + (b.wager ? b.wager + '×' : 'None') + '</span></div>' +
             '</div>' +
-            '<button class="btn ' + (isClaimed ? 'btn-outline' : 'btn-primary') + ' btn-block" ' +
-              (isClaimed ? 'disabled' : 'data-claim="' + b.id + '"') + '>' +
-              (isClaimed ? 'Already claimed' : 'Claim bonus') + '</button>' +
+            '<div style="border-top:1px solid var(--border-soft);padding-top:10px">' +
+              '<div class="stat-label" style="margin-bottom:6px">Required tasks</div>' + reqHtml +
+            '</div>' +
+            btn +
           '</article>';
         }).join('');
       }
@@ -117,7 +190,7 @@
         }).join('');
       }
 
-      function renderAll() { renderStats(); renderBonuses(); renderClaims(); }
+      function renderAll() { renderStats(); renderTasks(); renderBonuses(); renderClaims(); }
 
       document.getElementById('bonusGrid').addEventListener('click', function (e) {
         var b = e.target.closest('[data-claim]');
