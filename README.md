@@ -1,180 +1,160 @@
-# Nexa — Crypto Trading, Staking & Prediction Platform
+# Safu Traders — Crypto Trading, Staking & Prediction Platform
 
-A multi-page crypto platform front-end: spot trading, staking vaults, up/down price
-predictions, bonuses, a wallet with admin-approved deposits and withdrawals, KYC
-verification, multi-method authentication, and a restricted admin panel.
+A polished, multi-page front-end crypto platform: spot trading, staking vaults,
+up/down price predictions, task-gated bonuses, a wallet with admin-approved
+deposits and withdrawals, KYC verification, and a restricted admin panel.
 
-Built with **plain HTML, CSS and JavaScript** — no build step, no dependencies, no
-framework. All state lives in a mock data layer on top of `localStorage`, so every
-flow is clickable and demonstrable. The data layer is isolated behind a single
-module so a real backend can be dropped in later without touching the UI.
-
----
-
-## Quick start
-
-Because the app uses `localStorage` and relative asset paths, serve it over HTTP
-(opening `index.html` via `file://` works in most browsers, but a local server is
-more reliable):
-
-```bash
-# from the project root
-python3 -m http.server 8000
-# then open http://localhost:8000
-```
-
-Any static host works too — GitHub Pages, Netlify, Vercel, S3, nginx.
-
----
-
-## Demo accounts
-
-| Role  | Email                        | Password    | Notes                          |
-|-------|------------------------------|-------------|--------------------------------|
-| Admin | `joshuajoshfrosh@gmail.com`  | `admin1234` | **Sole admin** — sees the panel |
-| User  | `demo@nexa.app`              | `demo1234`  | Pre-funded with $12,500        |
-
-The admin panel is locked to the email in `assets/js/config.js` → `ADMIN_EMAIL`.
-Change that one line to move admin access to a different account.
-
-> Passwords are hashed with a trivial non-cryptographic function for demo purposes
-> only. A production build must hash server-side with bcrypt/argon2.
+Everything runs client-side on a **mock data layer** (`localStorage`), so every
+flow is clickable and demonstrable. The code is structured so a real backend can
+be dropped in later without touching the UI.
 
 ---
 
 ## Pages
 
-| File | Page | What it does |
+| Page | File | What it does |
 |------|------|--------------|
-| `index.html` | Home | Landing page: hero with live mock chart, feature grid, how-it-works, security, FAQ, CTA |
-| `trade.html` | Trade & Buy | Market list (12 assets), price chart with range switch, buy/sell form, holdings, order history |
-| `staking.html` | Staking | Vault cards with APY/terms, stake modal, active positions with accrued yield, unstake |
-| `predictions.html` | Predictions | Open 15-minute rounds with live countdown, up/down calls, your predictions, settled results |
-| `bonuses.html` | Bonuses | Claimable offers (admin-managed), claim history |
-| `wallet.html` | Wallet | Deposit and withdraw request modals, balance stats, filterable transaction history |
-| `kyc.html` | KYC | Identity form (name, DOB, country, document), status banner, resubmit on rejection |
-| `auth.html` | Login / Sign up | Gmail, iCloud, email and phone sign-in; full international country-code selector |
-| `admin.html` | Admin panel | Restricted to the sole admin — see below |
+| Home | `index.html` | Landing page — hero, product grid, how it works, security, FAQ |
+| Trade & Buy | `trade.html` | Market list, price chart, buy/sell forms, holdings |
+| Staking | `staking.html` | Staking plans with APY, stake / unstake |
+| Predictions | `predictions.html` | Up/down rounds with countdown and results |
+| Bonuses & Tasks | `bonuses.html` | Task centre + task-gated bonus offers |
+| Wallet | `wallet.html` | Deposit / withdraw requests, transaction history |
+| KYC | `kyc.html` | Identity verification submission |
+| Sign in / Sign up | `auth.html` | Email, phone (full country-code list), Gmail, iCloud |
+| Admin panel | `admin.html` | Restricted to the sole admin account |
 
 ---
 
-## Admin panel
+## Admin account
 
-Accessible only when signed in as `joshuajoshfrosh@gmail.com` (configurable). Any other
-account is shown an "Admin access only" screen.
+The admin panel is locked to **one** email address, set in
+`assets/js/config.js`:
 
-Sections:
+```js
+ADMIN_EMAIL: 'joshuajoshfrosh@gmail.com'
+```
 
-- **Overview** — user count, custodied balance, pending queue, recent activity
-- **KYC** — approve or reject submissions (rejection takes a reason shown to the user)
-- **Deposits** — approve (credits balance) or reject
-- **Withdrawals** — approve (debits balance) or reject
-- **Users** — search, suspend/activate, delete (admin account is protected)
-- **Balances** — credit or debit any user with a reason; every adjustment is logged
-- **Bonuses** — create, edit, enable/disable, delete; set amount, wagering and code
-- **Staking plans** — create, edit, delete; set asset, APY, lock days, min/max
-- **Prediction rounds** — create rounds, resolve with a closing price (winners paid 2×), delete
-- **Audit log** — every admin action with actor and timestamp
+- Signing up (or signing in) with that address grants the **Admin** link in the
+  navigation and full access to `admin.html`.
+- Every other account is a normal user and is redirected away from the panel.
+- To change the owner, edit that one line.
 
-### Undo
+### Admin capabilities
 
-Every admin mutation pushes a full state snapshot before it runs. The **Undo last
-action** button (top right, and in the amber bar) restores the exact previous state —
-so any approve, reject, credit, delete or edit can be reversed. The stack holds the
-last 60 actions.
+- Approve / reject **KYC** submissions
+- Approve / reject **deposits** and **withdrawals** (approving a deposit credits
+  the balance; approving a withdrawal debits it)
+- **Credit / debit** any user balance with a reason
+- Create, edit, enable/disable and delete **bonuses** — including which **tasks**
+  a user must complete before claiming
+- Manage **users** (suspend, activate, delete)
+- Manage **staking plans** and **prediction rounds** (create, edit, resolve, delete)
+- **Undo** the last action (every mutation pushes a snapshot)
+- Full **audit log**
+
+---
+
+## Bonuses are task-gated
+
+A bonus can only be claimed once every task attached to it is complete. Tasks are
+derived live from real activity:
+
+| Task | Completed when |
+|------|----------------|
+| Verify your account | KYC is approved |
+| Complete your profile | Name and phone are set |
+| Make a deposit | A deposit request was approved |
+| Place a trade | Any buy or sell order exists |
+| Open a staking position | Any stake exists |
+| Play a prediction round | Any prediction exists |
+
+Admins choose the required tasks per bonus in the admin panel.
+
+---
+
+## Sign-in
+
+- **Email + password** — standard sign in / sign up.
+- **Phone** — full international dialling-code selector (200 countries).
+- **Gmail / iCloud** — opens a prompt asking for the account address and
+  password, then signs in to that exact account (creating it on first use).
+  It never logs anyone in silently.
+
+---
+
+## Running locally
+
+No build step, no dependencies. Any static server works:
+
+```bash
+# Python
+python3 -m http.server 8000
+
+# or Node
+npx serve .
+```
+
+Then open <http://localhost:8000>.
+
+> Opening `index.html` directly via `file://` also works, but a local server is
+> recommended so `localStorage` behaves consistently.
 
 ---
 
 ## Project structure
 
 ```
-crypto-app/
+.
 ├── index.html            # Home
 ├── trade.html            # Trade & Buy
 ├── staking.html          # Staking
 ├── predictions.html      # Predictions
-├── bonuses.html          # Bonuses
+├── bonuses.html          # Bonuses & Tasks
 ├── wallet.html           # Wallet
 ├── kyc.html              # KYC verification
-├── auth.html             # Login / Sign up
-├── admin.html            # Admin panel
+├── auth.html             # Sign in / Sign up
+├── admin.html            # Admin panel (restricted)
 ├── README.md
 └── assets/
-    ├── css/
-    │   └── styles.css    # Design system: tokens, components, responsive rules
+    ├── css/styles.css    # Design system (dark crypto/fintech theme)
     └── js/
-        ├── config.js     # App config — ADMIN_EMAIL, currency, networks, limits
-        ├── countries.js  # Full international dialling-code list (~195 entries)
+        ├── config.js     # App config, admin email, task definitions
+        ├── countries.js  # Full international dialling codes
         ├── store.js      # Mock data layer (the "backend")
-        └── app.js        # Shared shell: nav, guards, toasts, modals, charts, country picker
+        └── app.js        # Shared UI shell: nav, guards, toasts, charts
 ```
 
-### The data layer (`store.js`)
+### Swapping in a real backend
 
-`window.Store` is the only thing the pages talk to. It exposes:
-
-- **Session** — `login`, `signup`, `logout`, `currentUser`, `isAdmin`
-- **Markets & trading** — `markets`, `market`, `buy`, `sell`, `holdings`, `portfolio`
-- **Staking** — `stakingPlans`, `stake`, `unstake`, `myStakes`
-- **Predictions** — `openRounds`, `placePrediction`, `myPredictions`
-- **Bonuses** — `bonuses`, `claimBonus`, `claimedBonusIds`
-- **Wallet** — `requestDeposit`, `requestWithdrawal`, `myTransactions`
-- **KYC** — `submitKyc`, `myKyc`
-- **Admin** — `reviewKyc`, `reviewTransaction`, `adjustBalance`, `saveBonus`,
-  `deleteBonus`, `toggleBonus`, `setUserStatus`, `deleteUser`, `savePlan`,
-  `deletePlan`, `saveRound`, `resolveRound`, `deleteRound`
-- **Undo** — `undoStack`, `undo`
-
-To plug in a real backend, re-implement these functions against HTTP endpoints.
-The return shape is consistently `{ ok: true, ... }` or `{ ok: false, error }`, so
-the UI needs no changes.
+The UI only ever calls `window.Store.*`. To go live, re-implement those functions
+in `store.js` against HTTP endpoints — no page code needs to change.
 
 ---
 
-## Design
+## Data & privacy
 
-Dark crypto/fintech theme: near-black background (`#070b12`), layered surfaces,
-a single green accent (`#00d68f`) for positive/primary actions, red for negative,
-amber for pending. Solid colours rather than gradients, tabular-numeric monospace
-for all figures. Fully responsive from 320px up, with a collapsible mobile nav and
-`prefers-reduced-motion` support.
+All data lives in the browser's `localStorage` under `safu_state_v2`. Nothing is
+sent to a server. Clearing site data resets the app to a clean slate.
 
 ---
 
-## What is needed to make this production-ready
+## Production checklist
 
-This is a **front-end demonstration with mock data**. Nothing is real: no funds
-move, no personal data leaves the browser, and all state resets when storage is
-cleared. To ship it for real you need:
+This is a front-end demo. To make it production-ready you would need:
 
-1. **Real backend** — an API server (Node/Go/Python) replacing `store.js`, with
-   server-side validation on every mutation. Never trust the client for balances.
-2. **Database** — Postgres (or similar) with a proper schema: users, balances,
-   ledger entries, orders, stakes, predictions, bonuses, claims, KYC records,
-   transactions, audit log. Balances must be derived from an append-only ledger,
-   not a mutable column.
-3. **Payment / crypto gateway** — a custody or on-chain integration (Fireblocks,
-   BitGo, Coinbase Custody, or direct node + HD wallet) for real deposits and
-   withdrawals, with address generation, confirmations and reconciliation.
-4. **Real OAuth** — Google OAuth 2.0 / OpenID Connect for Gmail, Sign in with
-   Apple for iCloud. The current buttons create local demo accounts.
-5. **SMS provider** — Twilio, MessageBird or Vonage for phone verification (OTP),
-   plus rate limiting and abuse protection.
-6. **KYC provider** — Sumsub, Onfido, Persona or Jumio for document capture,
-   liveness checks and sanctions/PEP screening. Store only provider references,
-   never raw documents.
-7. **Security** — server-side password hashing (bcrypt/argon2), session tokens or
-   JWTs with rotation, CSRF protection, rate limiting, 2FA, secrets management,
-   encrypted at-rest storage, and a real audit trail that cannot be edited.
-8. **Legal & compliance** — licensing in each jurisdiction you serve, AML/KYC
-   program, transaction monitoring, sanctions screening, terms of service, privacy
-   policy (GDPR/CCPA), risk disclosures, and — depending on the product — MiCA
-   (EU), MSB/FinCEN registration (US), or local equivalents. Prediction markets in
-   particular are regulated as gambling or derivatives in many jurisdictions and
-   may be prohibited entirely.
-9. **Operational** — monitoring, alerting, backups, disaster recovery, on-call,
-   and a treasury operations runbook for manual approvals.
+- A real backend API and database (users, balances, orders, transactions)
+- Real authentication with server-side password hashing (bcrypt/argon2)
+- Real OAuth for Gmail and iCloud (Apple Sign In)
+- An SMS provider for phone verification (Twilio, etc.)
+- A KYC provider (Onfido, Sumsub, Persona)
+- A crypto payment/custody gateway for real deposits and withdrawals
+- Server-side authorization for the admin panel (never trust the client)
+- Rate limiting, audit trails, 2FA, and security hardening
+- Legal and regulatory compliance (licensing, AML/KYC, terms, privacy policy)
 
-> **Not financial advice.** This project is a technical demonstration. Trading and
-> prediction products carry substantial risk of loss and are restricted or illegal
-> in some jurisdictions.
+---
+
+**Disclaimer:** This is a demonstration application built with mock data. No real
+funds, assets or personal data are processed. Nothing here constitutes
+investment advice.
