@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign in — Nexa</title>
-  <meta name="description" content="Sign in or create your Nexa account with Gmail, iCloud, email or phone." />
+  <title>Sign in — Safu Traders</title>
+  <meta name="description" content="Sign in or create your Safu Traders account with Gmail, iCloud, email or phone." />
   <link rel="stylesheet" href="assets/css/styles.css" />
 </head>
 <body>
@@ -15,7 +15,7 @@
     <div class="auth-wrap">
       <!-- ================================================== aside -->
       <aside class="auth-aside">
-        <div class="brand mb-3"><span class="brand-mark">N</span><span>Nexa</span></div>
+        <div class="brand mb-3"><span class="brand-mark">S</span><span>Safu Traders</span></div>
         <h2 style="font-size:30px;letter-spacing:-.03em;line-height:1.15">One account for trading, staking and predictions.</h2>
         <p class="text-dim mt-2" style="font-size:15px;line-height:1.65;max-width:38ch">
           Sign in to access your wallet, claim bonuses and track every position in one place.
@@ -27,10 +27,10 @@
           <li class="row"><span class="badge badge-up">✓</span><span class="text-dim" style="font-size:14px">Admin-approved deposits &amp; withdrawals</span></li>
         </ul>
         <div class="card mt-3" style="background:var(--surface);border-color:var(--border)">
-          <div class="stat-label mb-1">Demo credentials</div>
+          <div class="stat-label mb-1">Admin account</div>
           <div class="mono" style="font-size:12.5px;line-height:1.8">
-            demo@nexa.app / demo1234<br>
-            <span class="text-faint">Admin: joshuajoshfrosh@gmail.com / admin1234</span>
+            joshuajoshfrosh@gmail.com<br>
+            <span class="text-faint">Sole administrator — full panel access</span>
           </div>
         </div>
       </aside>
@@ -41,7 +41,7 @@
           <!-- sign in -->
           <div id="signinView">
             <h1>Welcome back</h1>
-            <p class="sub">Sign in to your Nexa account.</p>
+            <p class="sub">Sign in to your Safu Traders account.</p>
 
             <div class="oauth-grid">
               <button class="oauth-btn" data-oauth="gmail">
@@ -81,7 +81,7 @@
               <button class="btn btn-primary btn-lg btn-block" type="submit">Sign in</button>
             </form>
 
-            <p class="auth-switch">New to Nexa? <a id="toSignup">Create an account</a></p>
+            <p class="auth-switch">New to Safu Traders? <a id="toSignup">Create an account</a></p>
           </div>
 
           <!-- sign up -->
@@ -190,19 +190,78 @@
         setTimeout(function () { location.href = next; }, 350);
       }
 
-      /* OAuth demo buttons — create/sign in a demo social account */
-      document.querySelectorAll('[data-oauth]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          var provider = btn.dataset.oauth;
-          var email = provider === 'gmail' ? 'gmail.user@nexa.app' : 'icloud.user@nexa.app';
-          var existing = Store.get().users.find(function (u) { return u.email === email; });
-          if (existing) {
-            Store.login(email, 'social1234');
-          } else {
-            Store.signup({ name: provider === 'gmail' ? 'Gmail User' : 'iCloud User', email: email, password: 'social1234' });
+      /* ----------------------------------------------------------------
+         Social sign-in (Gmail / iCloud)
+         ------------------------------------------------------------------
+         These buttons must ASK for the account. They open a provider
+         prompt where the user types their real Gmail / iCloud address and
+         password; we then sign in to that exact account, or create it on
+         first use. No silent/auto login, no placeholder accounts.
+         ------------------------------------------------------------------ */
+      var PROVIDERS = {
+        gmail:  { label: 'Gmail',  domain: 'gmail.com' },
+        icloud: { label: 'iCloud', domain: 'icloud.com' }
+      };
+
+      function socialPrompt(provider) {
+        var p = PROVIDERS[provider];
+        if (!p) return;
+
+        UI.modal({
+          title: 'Continue with ' + p.label,
+          confirmText: 'Continue',
+          body:
+            '<p class="text-dim" style="font-size:13px;line-height:1.6;margin-bottom:14px">' +
+              'Enter the ' + p.label + ' account you want to use. We sign in to that exact address.' +
+            '</p>' +
+            '<div class="field"><label for="socEmail">' + p.label + ' address</label>' +
+              '<input class="input" id="socEmail" type="email" autocomplete="email" ' +
+                'placeholder="you@' + p.domain + '" /></div>' +
+            '<div class="field"><label for="socPass">Password</label>' +
+              '<input class="input" id="socPass" type="password" autocomplete="current-password" ' +
+                'placeholder="Your ' + p.label + ' password" /></div>' +
+            '<div class="error-text" id="socErr"></div>',
+          onOpen: function (root) {
+            setTimeout(function () { root.querySelector('#socEmail').focus(); }, 60);
+          },
+          onConfirm: function (root) {
+            var err = root.querySelector('#socErr');
+            err.textContent = '';
+            var email = (root.querySelector('#socEmail').value || '').trim().toLowerCase();
+            var pass = root.querySelector('#socPass').value || '';
+
+            if (!email) { err.textContent = 'Enter your ' + p.label + ' address.'; return false; }
+            if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+              err.textContent = 'That does not look like a valid email address.'; return false;
+            }
+            if (email.split('@')[1] !== p.domain) {
+              err.textContent = 'Please use a ' + p.domain + ' address for ' + p.label + ' sign-in.';
+              return false;
+            }
+            if (pass.length < 8) { err.textContent = 'Password must be at least 8 characters.'; return false; }
+
+            var existing = Store.get().users.find(function (u) { return u.email === email; });
+            var res;
+            if (existing) {
+              res = Store.login(email, pass);
+              if (!res.ok) { err.textContent = res.error; return false; }
+            } else {
+              res = Store.signup({
+                name: email.split('@')[0],
+                email: email,
+                password: pass,
+                country: ''
+              });
+              if (!res.ok) { err.textContent = res.error; return false; }
+            }
+            go();
+            return true;
           }
-          go();
         });
+      }
+
+      document.querySelectorAll('[data-oauth]').forEach(function (btn) {
+        btn.addEventListener('click', function () { socialPrompt(btn.dataset.oauth); });
       });
 
       /* sign in */
@@ -217,7 +276,7 @@
           var c = siPicker.get();
           var num = document.getElementById('siPhone').value.trim();
           if (!num) { err.textContent = 'Enter your phone number.'; return; }
-          email = '+' + c.dial + num.replace(/\D/g, '') + '@phone.nexa.app';
+          email = '+' + c.dial + num.replace(/\D/g, '') + '@phone.safutraders.app';
         } else {
           email = document.getElementById('siEmail').value.trim();
           if (!email) { err.textContent = 'Enter your email address.'; return; }
@@ -245,7 +304,7 @@
           if (!num) { err.textContent = 'Enter your phone number.'; return; }
           phone = '+' + c.dial + ' ' + num;
           country = c.name;
-          email = '+' + c.dial + num.replace(/\D/g, '') + '@phone.nexa.app';
+          email = '+' + c.dial + num.replace(/\D/g, '') + '@phone.safutraders.app';
         } else {
           email = document.getElementById('suEmail').value.trim();
           if (!email) { err.textContent = 'Enter your email address.'; return; }
