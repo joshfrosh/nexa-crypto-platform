@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Nexa — mock data layer
+   Safu Traders — mock data layer
    --------------------------------------------------------------------------
    A single, self-contained "backend" implemented on top of localStorage.
    Every page talks to this module only, so swapping in a real API later
@@ -89,19 +89,7 @@
       createdAt: now()
     };
 
-    var demo = {
-      id: 'usr_demo',
-      name: 'Demo Trader',
-      email: 'demo@nexa.app',
-      phone: '+1 555 0100',
-      country: 'United States',
-      passwordHash: hash('demo1234'),
-      balance: 12500,
-      kycStatus: 'pending',
-      role: 'user',
-      status: 'active',
-      createdAt: now()
-    };
+    var demo = null; /* Demo account removed — all previously signed-up accounts are cleared. */
 
     var plans = [
       { id: 'plan_btc30', name: 'Bitcoin Flexible', symbol: 'BTC', apy: 4.5, days: 30, min: 50, max: 100000, active: true },
@@ -111,10 +99,10 @@
     ];
 
     var bonuses = [
-      { id: 'bon_welcome', title: 'Welcome Bonus', description: 'New here? Grab a head start on your first trade.', amount: 25, type: 'credit', wager: 1, code: 'WELCOME25', active: true },
-      { id: 'bon_deposit', title: 'First Deposit Match', description: 'Get 10% extra on your first approved deposit, up to $100.', amount: 100, type: 'credit', wager: 3, code: 'DEPOSIT10', active: true },
-      { id: 'bon_stake', title: 'Staking Kickstart', description: 'Bonus credit when you open your first staking position.', amount: 15, type: 'credit', wager: 0, code: 'STAKE15', active: true },
-      { id: 'bon_weekend', title: 'Weekend Prediction Boost', description: 'Extra balance for prediction markets this weekend.', amount: 10, type: 'credit', wager: 2, code: 'WEEKEND10', active: false }
+      { id: 'bon_welcome', title: 'Welcome Bonus', description: 'New here? Complete the starter tasks to unlock your head start.', amount: 25, type: 'credit', wager: 1, code: 'WELCOME25', active: true, requires: ['verify', 'profile'] },
+      { id: 'bon_deposit', title: 'First Deposit Match', description: 'Get 10% extra on your first approved deposit, up to $100.', amount: 100, type: 'credit', wager: 3, code: 'DEPOSIT10', active: true, requires: ['deposit', 'trade'] },
+      { id: 'bon_stake', title: 'Staking Kickstart', description: 'Bonus credit when you open your first staking position.', amount: 15, type: 'credit', wager: 0, code: 'STAKE15', active: true, requires: ['stake'] },
+      { id: 'bon_weekend', title: 'Weekend Prediction Boost', description: 'Extra balance for prediction markets this weekend.', amount: 10, type: 'credit', wager: 2, code: 'WEEKEND10', active: false, requires: ['predict', 'trade'] }
     ];
 
     var rounds = [
@@ -123,19 +111,13 @@
       { id: 'rnd_sol_1', symbol: 'SOL', round: 613, startPrice: 175.2, endPrice: 172.44, status: 'closed', opensAt: now(), closesAt: now() }
     ];
 
-    var txs = [
-      { id: 'tx_1', userId: 'usr_demo', type: 'deposit', asset: 'USDT', network: 'TRC-20', amount: 5000, address: 'TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE', status: 'approved', createdAt: new Date(Date.now() - 86400000 * 3).toISOString(), note: 'Seed deposit' },
-      { id: 'tx_2', userId: 'usr_demo', type: 'withdrawal', asset: 'BTC', network: 'Bitcoin', amount: 0.05, address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq', status: 'pending', createdAt: new Date(Date.now() - 3600000 * 5).toISOString(), note: '' },
-      { id: 'tx_3', userId: 'usr_demo', type: 'deposit', asset: 'ETH', network: 'ERC-20', amount: 1.2, address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F', status: 'pending', createdAt: new Date(Date.now() - 3600000 * 2).toISOString(), note: '' }
-    ];
+    var txs = [];
 
-    var kyc = [
-      { id: 'kyc_1', userId: 'usr_demo', fullName: 'Demo Trader', dob: '1994-05-12', country: 'United States', docType: 'passport', docNumber: 'X1234567', status: 'pending', submittedAt: new Date(Date.now() - 7200000).toISOString(), reviewedAt: null, note: '' }
-    ];
+    var kyc = [];
 
     return {
-      version: 1,
-      users: [admin, demo],
+      version: 2,
+      users: [admin],
       session: null,
       markets: markets,
       orders: [],
@@ -170,7 +152,7 @@
 
   function persist() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); }
-    catch (e) { console.warn('Nexa: could not persist state', e); }
+    catch (e) { console.warn('Safu Traders: could not persist state', e); }
   }
 
   function get() { if (!state) load(); return state; }
@@ -229,7 +211,9 @@
       passwordHash: hash(data.password || ''),
       balance: 0,
       kycStatus: 'unverified',
-      role: 'user',
+      /* The owner's Gmail is the sole admin. Signing up with it grants the
+         admin panel automatically; every other account is a normal user. */
+      role: email === CFG.ADMIN_EMAIL.toLowerCase() ? 'admin' : 'user',
       status: 'active',
       createdAt: now()
     };
@@ -362,6 +346,34 @@
   function claimedBonusIds(userId) {
     return get().claims.filter(function (c) { return c.userId === userId; }).map(function (c) { return c.bonusId; });
   }
+
+  /* ------------------------------------------------------------ task engine */
+  /* Returns a map of taskId -> true/false for the given user, derived live
+     from their real activity. Bonuses gate on these. */
+  function taskStatus(userId) {
+    var s = get();
+    var u = s.users.find(function (x) { return x.id === userId; });
+    var out = {};
+    if (!u) return out;
+
+    out.verify = u.kycStatus === 'approved';
+    out.profile = !!(u.name && u.phone);
+    out.deposit = s.transactions.some(function (t) {
+      return t.userId === userId && t.type === 'deposit' && t.status === 'approved';
+    });
+    out.trade = s.orders.some(function (o) { return o.userId === userId; });
+    out.stake = s.stakes.some(function (x) { return x.userId === userId; });
+    out.predict = s.predictions.some(function (p) { return p.userId === userId; });
+    return out;
+  }
+
+  /* Which of a bonus's required tasks are still outstanding */
+  function missingTasks(bonus, userId) {
+    var req = bonus.requires || [];
+    var st = taskStatus(userId);
+    return req.filter(function (id) { return !st[id]; });
+  }
+
   function claimBonus(bonusId) {
     var s = get(), u = currentUser();
     if (!u) return { ok: false, error: 'Please sign in.' };
@@ -369,6 +381,16 @@
     if (!b) return { ok: false, error: 'Bonus not found.' };
     if (!b.active) return { ok: false, error: 'This bonus is not currently available.' };
     if (claimedBonusIds(u.id).indexOf(bonusId) !== -1) return { ok: false, error: 'You have already claimed this bonus.' };
+
+    var missing = missingTasks(b, u.id);
+    if (missing.length) {
+      var labels = missing.map(function (id) {
+        var t = (CFG.TASKS || []).find(function (x) { return x.id === id; });
+        return t ? t.label : id;
+      });
+      return { ok: false, error: 'Complete these tasks first: ' + labels.join(', ') + '.' };
+    }
+
     u.balance = +(u.balance + b.amount).toFixed(2);
     s.claims.unshift({ id: uid('clm'), userId: u.id, bonusId: b.id, title: b.title, amount: b.amount, claimedAt: now() });
     log('bonus.claim', b.title + ' $' + b.amount);
@@ -494,7 +516,8 @@
       s.bonuses.unshift({
         id: uid('bon'), title: data.title, description: data.description || '',
         amount: Number(data.amount) || 0, type: data.type || 'credit',
-        wager: Number(data.wager) || 0, code: data.code || '', active: data.active !== false
+        wager: Number(data.wager) || 0, code: data.code || '', active: data.active !== false,
+        requires: Array.isArray(data.requires) ? data.requires : []
       });
     }
     log('admin.bonus.save', data.title);
@@ -689,6 +712,8 @@
     allBonuses: allBonuses,
     claimedBonusIds: claimedBonusIds,
     claimBonus: claimBonus,
+    taskStatus: taskStatus,
+    missingTasks: missingTasks,
     /* wallet */
     requestDeposit: requestDeposit,
     requestWithdrawal: requestWithdrawal,
