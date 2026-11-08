@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Nexa — shared UI shell
+   Safu Traders — shared UI shell
    Nav rendering, auth guards, toasts, modals, formatting, charts,
    and the international country-code selector.
    ========================================================================== */
@@ -304,7 +304,7 @@
 
     host.innerHTML =
       '<div class="container nav-inner">' +
-        '<a class="brand" href="index.html"><span class="brand-mark">N</span><span>' + CFG.APP_NAME + '</span></a>' +
+        '<a class="brand" href="index.html"><span class="brand-mark">S</span><span>' + CFG.APP_NAME + '</span></a>' +
         '<button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navLinks" aria-label="Toggle navigation">' +
           '<span></span><span></span><span></span></button>' +
         '<nav class="nav-links" id="navLinks">' + links + '</nav>' +
@@ -374,7 +374,7 @@
       '<div class="container">' +
         '<div class="footer-grid">' +
           '<div class="footer-brand">' +
-            '<a class="brand" href="index.html"><span class="brand-mark">N</span><span>' + CFG.APP_NAME + '</span></a>' +
+            '<a class="brand" href="index.html"><span class="brand-mark">S</span><span>' + CFG.APP_NAME + '</span></a>' +
             '<p>' + esc(CFG.APP_TAGLINE) + '</p>' +
           '</div>' +
           '<div><h4>Product</h4><ul>' +
